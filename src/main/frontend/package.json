@@ -1,5 +1,5 @@
 {
-  "name": "lightning-storefront",
+  "name": "moneymaker-front",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,7 +7,6 @@
     "install": "^0.13.0",
     "node-sass": "^6.0.1",
     "npm": "^7.21.1",
-    "qrcode.react": "^1.0.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-hook-form": "^7.11.0",
@@ -48,7 +47,6 @@
     "@testing-library/user-event": "^12.8.3",
     "@types/jest": "^26.0.24",
     "@types/node": "^16.3.2",
-    "@types/qrcode.react": "^1.0.2",
     "@types/react": "^17.0.14",
     "@types/react-dom": "^17.0.9",
     "@types/react-router-dom": "^5.1.8",

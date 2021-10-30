@@ -1,2 +1,2 @@
-rootProject.name = "lightning-store"
+rootProject.name = "moneymaker"
 
