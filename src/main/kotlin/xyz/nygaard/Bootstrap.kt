@@ -102,6 +102,16 @@ internal fun Application.buildApplication(
                 val orders = firiClient.getActiveOrders()
                 call.respond(orders)
             }
+
+            get("/orders/delete") {
+                firiClient.deleteActiveOrders()
+                call.respond("Deleted all orders")
+            }
+
+            get("/market") {
+                val market = firiClient.marketTicker()
+                call.respond(market)
+            }
         }
 
         // Serves all static content i.e: example.com/static/css/styles.css
