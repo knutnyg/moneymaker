@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.*
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.features.*
 import io.ktor.http.content.*
 import io.ktor.jackson.*
@@ -11,12 +15,11 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import xyz.nygaard.db.Database
 import java.io.File
-import javax.sql.DataSource
 
 val log: Logger = LoggerFactory.getLogger("Lightning Store")
 
@@ -24,27 +27,21 @@ fun main() {
     embeddedServer(Netty, port = 8020, host = "localhost") {
 
         val environment = Config(
-            databaseName = System.getenv("LS_DATABASE_NAME"),
-            databaseUsername = System.getenv("LS_DATABASE_USERNAME"),
-            databasePassword = System.getenv("LS_DATABASE_PASSWORD"),
-            staticResourcesPath = getEnvOrDefault("LS_STATIC_RESOURCES", "src/main/frontend/build"),
+            staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
+            firiBaseUrl = ""
         )
 
-        val database = Database(
-            "jdbc:postgresql://localhost:5432/${environment.databaseName}",
-            environment.databaseUsername,
-            environment.databasePassword,
-        )
         buildApplication(
-            dataSource = database.dataSource,
             staticResourcesPath = environment.staticResourcesPath,
+            baseurl = "https://api.miraiex.com/"
         )
     }.start(wait = true)
 }
 
 internal fun Application.buildApplication(
-    dataSource: DataSource,
     staticResourcesPath: String,
+    baseurl: String,
+    httpClient: HttpClient = HttpClient(CIO)
 ) {
     installContentNegotiation()
     install(XForwardedHeaderSupport)
@@ -53,7 +50,10 @@ internal fun Application.buildApplication(
     }
     routing {
         route("/api") {
-            registerSelftestApi()
+            registerSelftestApi(httpClient)
+            get("/ticker") {
+                httpClient.get("$baseurl/v2/markets/btcnok/ticker")
+            }
         }
 
         // Serves all static content i.e: example.com/static/css/styles.css
@@ -71,12 +71,20 @@ internal fun Application.buildApplication(
         static("*") {
             default("$staticResourcesPath/index.html")
         }
+
     }
 }
 
-fun Route.registerSelftestApi() {
+fun Route.registerSelftestApi(httpClient: HttpClient) {
     get("/isAlive") {
         call.respondText("I'm alive! :)")
+    }
+    get("/firi") {
+        log.info("looking up markets")
+        httpClient.use {
+            val res: HttpResponse = it.get("https://api.firi.com/v2/markets")
+            call.respond(res.readText())
+        }
     }
 }
 
@@ -91,10 +99,8 @@ fun Application.installContentNegotiation() {
 }
 
 data class Config(
-    val databaseName: String,
-    val databaseUsername: String,
-    val databasePassword: String,
-    val staticResourcesPath: String
+    val staticResourcesPath: String,
+    val firiBaseUrl: String,
 )
 
 fun getEnvOrDefault(name: String, defaultValue: String): String {

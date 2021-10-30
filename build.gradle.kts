@@ -27,13 +27,15 @@ repositories {
 }
 
 dependencies {
-    implementation("org.lightningj:lightningj:0.13.0-Beta")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     runtimeOnly("javax.json:javax.json-api:1.1.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("io.ktor:ktor-auth:$ktorVersion")
@@ -46,8 +48,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    implementation("com.github.nitram509:jmacaroons:0.4.1")
-
     //Database
     implementation("org.postgresql:postgresql:$postgresVersion")
     implementation("com.zaxxer:HikariCP:$hikariVersion")
@@ -58,7 +58,6 @@ dependencies {
     testImplementation("io.mockk:mockk:1.12.0")
     testImplementation("org.assertj:assertj-core:3.21.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
-        exclude(group = "org.eclipse.jetty") // conflicts with WireMock
         exclude(group = "junit")
     }
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.4")
