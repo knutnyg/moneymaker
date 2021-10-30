@@ -1,11 +1,14 @@
 package xyz.nygaard
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.features.*
@@ -21,9 +24,11 @@ import org.slf4j.event.Level
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
+import java.time.Instant
 import java.util.*
 
 val log: Logger = LoggerFactory.getLogger("Lightning Store")
+val objectMapper = jacksonObjectMapper()
 
 fun main() {
     embeddedServer(Netty, port = 8020, host = "localhost") {
@@ -45,10 +50,20 @@ fun main() {
             firiBaseUrl = "https://api.firi.com/v2/"
         )
 
+        val httpClient = HttpClient(CIO) {
+            install(JsonFeature) {
+                serializer = JacksonSerializer() {
+                    disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    registerModule(JavaTimeModule())
+                }
+            }
+        }
 
+        val firiClient = FiriClient(httpClient, environment.apiKey)
 
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
+            firiClient = firiClient,
             config = environment
         )
     }.start(wait = true)
@@ -56,6 +71,7 @@ fun main() {
 
 internal fun Application.buildApplication(
     staticResourcesPath: String,
+    firiClient: FiriClient,
     config: Config,
     httpClient: HttpClient = HttpClient(CIO)
 ) {
@@ -72,11 +88,19 @@ internal fun Application.buildApplication(
                 httpClient.use {
                     val res: HttpResponse = it.get("${config.firiBaseUrl}/balances") {
                         header("miraiex-access-key", config.apiKey)
-                        header("firi-user-clientid", config.clientId)
-                        header("firi-user-signature", createSignature(config.clientSecret))
+                        val timestamp = Instant.now().epochSecond
+                        parameter("timestamp", timestamp.toString())
+                        parameter("validity", 5000)
+                        header("miraiex-user-clientid", config.clientId)
+                        header("miraiex-user-signature", createSignature(config.clientSecret, timestamp.toString()))
                     }
                     call.respond(res.readText())
                 }
+            }
+            get("/orders/open") {
+                log.info("fetching open orders")
+                val orders = firiClient.getActiveOrders()
+                call.respond(orders)
             }
         }
 
