@@ -15,32 +15,46 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import xyz.nygaard.util.createSignature
 import java.io.File
+import java.io.FileInputStream
+import java.util.*
 
 val log: Logger = LoggerFactory.getLogger("Lightning Store")
 
 fun main() {
     embeddedServer(Netty, port = 8020, host = "localhost") {
 
+        val props = Properties()
+
+        val propertiesFile = File("src/resources/config.properties")
+        if (propertiesFile.exists()) {
+            log.info("loaded config.properties")
+            props.load(FileInputStream("src/resources/config.properties"))
+        }
+
+
         val environment = Config(
             staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
-            firiBaseUrl = ""
+            clientId = props["CLIENT_ID"].toString(),
+            clientSecret = props["CLIENT_SECRET"].toString(),
+            apiKey = props["API_KEY"].toString(),
+            firiBaseUrl = "https://api.firi.com/v2/"
         )
 
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
-            baseurl = "https://api.miraiex.com/"
+            config = environment
         )
     }.start(wait = true)
 }
 
 internal fun Application.buildApplication(
     staticResourcesPath: String,
-    baseurl: String,
+    config: Config,
     httpClient: HttpClient = HttpClient(CIO)
 ) {
     installContentNegotiation()
@@ -51,8 +65,16 @@ internal fun Application.buildApplication(
     routing {
         route("/api") {
             registerSelftestApi(httpClient)
-            get("/ticker") {
-                httpClient.get("$baseurl/v2/markets/btcnok/ticker")
+            get("/balance") {
+                log.info("looking up balance")
+                httpClient.use {
+                    val res: HttpResponse = it.get("${config.firiBaseUrl}/balances") {
+                        header("miraiex-access-key", config.apiKey)
+                        header("firi-user-clientid", config.clientId)
+                        header("firi-user-signature", createSignature(config.clientSecret))
+                    }
+                    call.respond(res.readText())
+                }
             }
         }
 
@@ -101,6 +123,9 @@ fun Application.installContentNegotiation() {
 data class Config(
     val staticResourcesPath: String,
     val firiBaseUrl: String,
+    val apiKey: String,
+    val clientId: String,
+    val clientSecret: String
 )
 
 fun getEnvOrDefault(name: String, defaultValue: String): String {
