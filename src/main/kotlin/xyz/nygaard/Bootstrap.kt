@@ -30,10 +30,10 @@ fun main() {
 
         val props = Properties()
 
-        val propertiesFile = File("src/resources/config.properties")
+        val propertiesFile = File("src/main/resources/config.properties")
         if (propertiesFile.exists()) {
             log.info("loaded config.properties")
-            props.load(FileInputStream("src/resources/config.properties"))
+            props.load(FileInputStream("src/main/resources/config.properties"))
         }
 
 
@@ -44,6 +44,8 @@ fun main() {
             apiKey = props["API_KEY"].toString(),
             firiBaseUrl = "https://api.firi.com/v2/"
         )
+
+
 
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
