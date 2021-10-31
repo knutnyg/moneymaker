@@ -65,4 +65,24 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
             throw RuntimeException(e)
         }
     }
+
+    suspend fun placeAsk(price: Double, amount: Double = 0.0001): OrderResponse {
+        log.info("Placing ask for $amount BTCNOK @ $price")
+
+        val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
+            contentType(ContentType.Application.Json)
+            header("miraiex-access-key", apiKey)
+            this.body = OrderRequest(
+                type = "ask",
+                price = price.toString(),
+                amount = amount.toString()
+            )
+        }
+        return try {
+            res.receive()
+        } catch (e: Exception) {
+            log.info("Failed to place order", e)
+            throw RuntimeException(e)
+        }
+    }
 }

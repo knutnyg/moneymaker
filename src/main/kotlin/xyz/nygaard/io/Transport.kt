@@ -38,7 +38,7 @@ data class ActiveOrder(
     fun outOfSync(marketTicker: MarketTicker): Boolean {
         return when (type) {
             OrderType.bid -> this.price < (marketTicker.bid * 0.998)
-            OrderType.ask -> this.price > (marketTicker.ask * 1.002)
+            OrderType.ask -> this.price > (marketTicker.ask * 1.003)
         }
     }
 }
@@ -54,7 +54,7 @@ data class MarketTicker(
     private fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
     fun maxBid(): Double = (BigDecimal(ask) * BigDecimal(0.989)).setScale(2, RoundingMode.HALF_UP).toDouble()
-    fun minAsk(): Double = (BigDecimal(bid) * BigDecimal(1.011)).setScale(2, RoundingMode.HALF_UP).toDouble()
+    fun minAsk(): Double = (BigDecimal(bid) * BigDecimal(1.013)).setScale(2, RoundingMode.HALF_UP).toDouble()
 
     override fun toString(): String {
         return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
