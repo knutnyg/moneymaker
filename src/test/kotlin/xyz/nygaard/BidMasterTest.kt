@@ -56,6 +56,17 @@ internal class BidMasterTest {
         coVerify(exactly = 1) { firiClientMock.placeBid(90.0) }
     }
 
+    @Test
+    fun `move bid closer as spread has increased`() {
+        val tick = MarketTicker(bid = 513015.3, ask = 518469.83)
+        val activeBids = listOf(activeBid(510608.01))
+
+        BidMaster(activeBids, tick, firiClientMock).execute()
+
+        coVerify(exactly = 1) { firiClientMock.deleteActiveOrders() }
+        coVerify(exactly = 1) { firiClientMock.placeBid(512766.66) }
+    }
+
     private fun activeBid(price: Double) = ActiveOrder(
         id = 123,
         market = Market.BTCNOK,

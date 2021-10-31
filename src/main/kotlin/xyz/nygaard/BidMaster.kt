@@ -19,6 +19,8 @@ class BidMaster(
             if (activeBids.hasAnyOutOfSyncBids(marketTicker)) {
                 log.info("We have a valid bid that is out of sync")
                 firiClient.deleteActiveOrders()
+                val price = min(marketTicker.maxBid(), marketTicker.bid)
+                firiClient.placeBid(price)
             } else {
                 log.info("We have a valid bid, nothing to do here")
             }
