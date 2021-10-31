@@ -66,7 +66,17 @@ fun main() {
             firiClient = firiClient,
             config = environment
         )
+
+        val mytask = MyTask()
+        Timer("tick").scheduleAtFixedRate(mytask, 2000, 5000)
+
     }.start(wait = true)
+}
+
+class MyTask : TimerTask() {
+    override fun run() {
+        println("im a task that run every 5 seconds")
+    }
 }
 
 internal fun Application.buildApplication(
