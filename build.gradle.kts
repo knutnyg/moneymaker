@@ -1,5 +1,5 @@
 
-val ktorVersion = "1.5.1"
+val ktorVersion = "1.6.4"
 val logbackVersion = "1.2.3"
 val logstashEncoderVersion = "5.1"
 val kotlinVersion = "1.3.40"
@@ -13,7 +13,7 @@ group = "xyz.nygaard"
 version = "1.1"
 
 plugins {
-    kotlin("jvm") version "1.5.0"
+    kotlin("jvm") version "1.5.30"
 }
 
 buildscript {
