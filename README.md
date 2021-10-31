@@ -13,8 +13,11 @@ Moneymaker need your apikeys. Create a `config.properties` file in your resource
 - [X] Place bid
 - [X] Remove / update bid
 
-- [ ] Place ask
-- [ ] Remove / update ask
+- [X] Place ask
+- [X] Remove / update ask
+
+- [ ] Refactor firiclient out of masters -> return tasks  
 
 - [ ] Buy BTC (taker)
 - [ ] Buy NOK (taker)
+
