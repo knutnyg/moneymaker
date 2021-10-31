@@ -1,26 +1,30 @@
 package xyz.nygaard
 
-import io.mockk.coVerify
-import io.mockk.mockk
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
 import java.time.LocalDateTime
 
 internal class AskMasterTest {
 
-    private val firiClientMock = mockk<FiriClient>(relaxed = true)
-
     @Test
     fun `no current order - low spread`() {
         val tick = MarketTicker(bid = 999.0, ask = 1000.0)
         val activeAsks = emptyList<ActiveOrder>()
 
-        AskMaster(activeAsks, tick, firiClientMock).execute()
+        val req = CreateOrderRequest(
+            ask,
+            price = 1011.99,
+            amount = 0.0001,
+        )
 
-        coVerify(exactly = 0 ) { firiClientMock.deleteActiveOrders() }
-        coVerify(exactly = 1) { firiClientMock.placeAsk(1011.99) }
+        val actions = AskMaster(activeAsks, tick).execute()
+        assertThat(actions).containsExactly(
+            AddAsk(req = req)
+        )
     }
 
     @Test
@@ -28,10 +32,15 @@ internal class AskMasterTest {
         val tick = MarketTicker(bid = 900.0, ask = 1000.0)
         val activeAsks = emptyList<ActiveOrder>()
 
-        AskMaster(activeAsks, tick, firiClientMock).execute()
-
-        coVerify(exactly = 0 ) { firiClientMock.deleteActiveOrders() }
-        coVerify(exactly = 1) { firiClientMock.placeAsk(1000.0) }
+        val actions = AskMaster(activeAsks, tick).execute()
+        val req = CreateOrderRequest(
+            ask,
+            price = 1000.0,
+            amount = 0.0001,
+        )
+        assertThat(actions).containsExactly(
+            AddAsk(req = req)
+        )
     }
 
     @Test
@@ -39,10 +48,8 @@ internal class AskMasterTest {
         val tick = MarketTicker(bid = 900.0, ask = 1000.0)
         val activeAsks = listOf(activeAsk(1001.0))
 
-        AskMaster(activeAsks, tick, firiClientMock).execute()
-
-        coVerify(exactly = 0) { firiClientMock.deleteActiveOrders() }
-        coVerify(exactly = 0) { firiClientMock.placeAsk(any()) }
+        val actions = AskMaster(activeAsks, tick).execute()
+        assertThat(actions).isEmpty()
     }
 
     @Test
@@ -50,10 +57,17 @@ internal class AskMasterTest {
         val tick = MarketTicker(bid = 90.0, ask = 110.0)
         val activeAsks = listOf(activeAsk(91.0))
 
-        AskMaster(activeAsks, tick, firiClientMock).execute()
+        val actions = AskMaster(activeAsks, tick).execute()
+        val req = CreateOrderRequest(
+            ask,
+            price = 110.0,
+            amount = 0.0001,
+        )
+        assertThat(actions).containsExactly(
+            ClearOrders(orderType = ask),
+            AddAsk(req = req),
+        )
 
-        coVerify(exactly = 1) { firiClientMock.deleteActiveOrders() }
-        coVerify(exactly = 1) { firiClientMock.placeAsk(110.0) }
     }
 
     @Test
@@ -61,16 +75,23 @@ internal class AskMasterTest {
         val tick = MarketTicker(bid = 510000.0, ask = 520000.0)
         val activeAsks = listOf(activeAsk(530000.0))
 
-        AskMaster(activeAsks, tick, firiClientMock).execute()
+        val actions = AskMaster(activeAsks, tick).execute()
+        val req = CreateOrderRequest(
+            ask,
+            price = 520000.0,
+            amount = 0.0001,
+        )
 
-        coVerify(exactly = 1) { firiClientMock.deleteActiveOrders() }
-        coVerify(exactly = 1) { firiClientMock.placeAsk(520000.0) }
+        assertThat(actions).containsExactly(
+            ClearOrders(orderType = ask),
+            AddAsk(req = req),
+        )
     }
 
     private fun activeAsk(price: Double) = ActiveOrder(
         id = 123,
         market = Market.BTCNOK,
-        type = ActiveOrder.OrderType.ask,
+        type = ask,
         price = price,
         remaining = 1.0,
         amount = 1.0,

@@ -68,7 +68,7 @@ fun main() {
             config = environment
         )
 
-        val ticker = Ticker(firiClient)
+        val ticker = Ticker(firiClient, taskMaster = TaskMaster(firiClient))
         Timer("tick")
             .scheduleAtFixedRate(ticker, 2000, 5000)
 

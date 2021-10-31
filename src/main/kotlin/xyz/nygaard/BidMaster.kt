@@ -2,32 +2,50 @@ package xyz.nygaard
 
 import kotlinx.coroutines.runBlocking
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.ActiveOrder.OrderType
 import xyz.nygaard.io.MarketTicker
 import kotlin.math.min
 
 class BidMaster(
     val activeBids: List<ActiveOrder>,
     val marketTicker: MarketTicker,
-    private val firiClient: FiriClient
 ) {
-    fun execute(): Unit = runBlocking {
+    fun execute(): List<Action> = runBlocking {
+        val actions = mutableListOf<Action>()
         if (activeBids.hasInvalidOrders(marketTicker)) {
             log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
-            firiClient.deleteActiveOrders()
+            actions.add(ClearOrders(OrderType.bid))
         }
+
         if (activeBids.hasValidOrders(marketTicker)) {
             if (activeBids.hasAnyOutOfSyncBids(marketTicker)) {
                 log.info("We have a valid bid that is out of sync")
-                firiClient.deleteActiveOrders()
+                if (!actions.contains(ClearOrders(OrderType.bid))) {
+                    actions.add(ClearOrders(OrderType.bid))
+                }
+
                 val price = min(marketTicker.maxBid(), marketTicker.bid)
-                firiClient.placeBid(price)
+                val req = CreateOrderRequest(
+                    type = OrderType.bid,
+                    amount = 0.0001,
+                    price = price,
+                )
+                actions.add(AddBid(req = req))
             } else {
                 log.info("We have a valid bid, nothing to do here")
             }
         } else {
             val price = min(marketTicker.maxBid(), marketTicker.bid)
-            firiClient.placeBid(price)
+
+            val req = CreateOrderRequest(
+                type = OrderType.bid,
+                amount = 0.0001,
+                price = price,
+            )
+            actions.add(AddBid(req = req))
         }
+
+        return@runBlocking actions
     }
 }
 
