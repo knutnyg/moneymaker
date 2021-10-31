@@ -46,11 +46,8 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     }
 
 
-    suspend fun placeBid(price: Double, amount: Double = 0.0001, dryRun: Boolean = true): OrderResponse {
+    suspend fun placeBid(price: Double, amount: Double = 0.0001): OrderResponse {
         log.info("Placing bid for $amount BTCNOK @ $price")
-
-        if (dryRun) return OrderResponse(123)
-            .also { log.info("Skipped placing order due to dry run") }
 
         val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
             contentType(ContentType.Application.Json)

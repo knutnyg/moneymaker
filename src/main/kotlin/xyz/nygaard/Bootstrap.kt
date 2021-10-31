@@ -23,7 +23,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import xyz.nygaard.core.Ticker
-import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream

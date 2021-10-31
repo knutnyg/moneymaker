@@ -10,7 +10,7 @@ class BidMaster(
     val marketTicker: MarketTicker,
     private val firiClient: FiriClient
 ) {
-    fun execute() = runBlocking {
+    fun execute(): Unit = runBlocking {
         if (activeBids.hasInvalidOrders(marketTicker)) {
             log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
             firiClient.deleteActiveOrders()
@@ -26,7 +26,6 @@ class BidMaster(
         } else {
             val price = min(marketTicker.maxBid(), marketTicker.bid)
             firiClient.placeBid(price)
-            log.info("Placed 1 bid @$price")
         }
     }
 }
