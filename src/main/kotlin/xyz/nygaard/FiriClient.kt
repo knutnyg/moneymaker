@@ -44,7 +44,7 @@ enum class Market { BTCNOK }
 data class MarketTicker(
     val bid: Double,
     val ask: Double,
-    val spread: Double
+    val spread: Double = (ask - bid)
 ) {
 
     private fun spreadAsPercentage() = BigDecimal( spread / ((ask + bid) / 2 ) * 100 ).setScale(2, RoundingMode.HALF_UP)

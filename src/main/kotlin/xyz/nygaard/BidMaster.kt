@@ -1,5 +1,6 @@
 package xyz.nygaard
 
+import kotlinx.coroutines.runBlocking
 import java.lang.Double
 
 class BidMaster(
@@ -7,7 +8,7 @@ class BidMaster(
     val marketTicker: MarketTicker,
     val firiClient: FiriClient
 ) {
-    suspend fun execute() {
+    fun execute() = runBlocking {
         if (activeBids.hasInvalidOrders(marketTicker)) {
             log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
             firiClient.deleteActiveOrders()
