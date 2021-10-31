@@ -18,12 +18,14 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
+import java.lang.Double.min
 import java.time.Instant
 import java.util.*
 
@@ -67,17 +69,49 @@ fun main() {
             config = environment
         )
 
-        val mytask = MyTask()
+        val mytask = MyTask(firiClient)
         Timer("tick").scheduleAtFixedRate(mytask, 2000, 5000)
 
     }.start(wait = true)
 }
 
-class MyTask : TimerTask() {
-    override fun run() {
-        println("im a task that run every 5 seconds")
+class MyTask(val firiClient: FiriClient) : TimerTask() {
+    override fun run() = runBlocking {
+        val marketTicker = firiClient.marketTicker()
+        log.info(marketTicker.toString())
+        // Fetch spread
+        // Check if our bid is within bounds
+        val bids = firiClient.getActiveOrders()
+            .filter { it.type == ActiveOrder.OrderType.bid }
+
+        if (bids.hasInvalidOrders(marketTicker)) {
+            log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
+            firiClient.deleteActiveOrders()
+        }
+
+        // Check if we should move bid
+        if (bids.validOrders(marketTicker).isNotEmpty()) {
+            if (bids.outOfSyncBids(marketTicker).isNotEmpty()) {
+                log.info("We have a valid bid that is out of sync")
+                firiClient.deleteActiveOrders()
+            } else {
+                log.info("We have a valid bid, nothing to do here")
+            }
+        } else {
+            val price = min(marketTicker.maxBid(), marketTicker.bid)
+            val response = firiClient.placeBid(price)
+            log.info("Placed 1 bid @$price")
+        }
+
+        // keep or delete & recreate
+        // Check if our ask in within bounds
+        // keep or delete & recreate
     }
 }
+
+fun List<ActiveOrder>.validOrders(marketTicker: MarketTicker) = this.filter { it.valid(marketTicker) }
+fun List<ActiveOrder>.outOfSyncBids(marketTicker: MarketTicker) = this.filter { it.valid(marketTicker) }
+fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }
 
 internal fun Application.buildApplication(
     staticResourcesPath: String,
