@@ -1,6 +1,8 @@
 package xyz.nygaard
 
 import kotlinx.coroutines.runBlocking
+import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.MarketTicker
 import java.lang.Double
 
 class BidMaster(
@@ -28,3 +30,7 @@ class BidMaster(
         }
     }
 }
+
+fun List<ActiveOrder>.hasValidOrders(marketTicker: MarketTicker) = this.any { it.valid(marketTicker) }
+fun List<ActiveOrder>.hasAnyoutOfSyncBids(marketTicker: MarketTicker) = this.any { it.outOfSync(marketTicker) }
+fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }

@@ -22,10 +22,10 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
-import java.lang.Double.min
 import java.time.Instant
 import java.util.*
 
@@ -75,25 +75,17 @@ fun main() {
     }.start(wait = true)
 }
 
-class BotTicker(val firiClient: FiriClient) : TimerTask() {
+class BotTicker(private val firiClient: FiriClient) : TimerTask() {
     override fun run() = runBlocking {
-        val marketTicker = firiClient.marketTicker()
+        val marketTicker = firiClient.fetchMarketTicker()
         log.info(marketTicker.toString())
-        // Fetch spread
-        // Check if our bid is within bounds
+
         val activeBids = firiClient.getActiveOrders()
             .filter { it.type == ActiveOrder.OrderType.bid }
 
-        val bidMaster = BidMaster(activeBids, marketTicker, firiClient)
-            .execute()
-
-
+        BidMaster(activeBids, marketTicker, firiClient).execute()
     }
 }
-
-fun List<ActiveOrder>.hasValidOrders(marketTicker: MarketTicker) = this.any { it.valid(marketTicker) }
-fun List<ActiveOrder>.hasAnyoutOfSyncBids(marketTicker: MarketTicker) = this.any { it.outOfSync(marketTicker) }
-fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }
 
 internal fun Application.buildApplication(
     staticResourcesPath: String,
@@ -135,7 +127,7 @@ internal fun Application.buildApplication(
             }
 
             get("/market") {
-                val market = firiClient.marketTicker()
+                val market = firiClient.fetchMarketTicker()
                 call.respond(market)
             }
         }
