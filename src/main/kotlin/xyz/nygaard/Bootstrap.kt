@@ -69,39 +69,25 @@ fun main() {
             config = environment
         )
 
-        val mytask = MyTask(firiClient)
-        Timer("tick").scheduleAtFixedRate(mytask, 2000, 5000)
+        val ticker = BotTicker(firiClient)
+        Timer("tick").scheduleAtFixedRate(ticker, 2000, 5000)
 
     }.start(wait = true)
 }
 
-class MyTask(val firiClient: FiriClient) : TimerTask() {
+class BotTicker(val firiClient: FiriClient) : TimerTask() {
     override fun run() = runBlocking {
         val marketTicker = firiClient.marketTicker()
         log.info(marketTicker.toString())
         // Fetch spread
         // Check if our bid is within bounds
-        val bids = firiClient.getActiveOrders()
+        val activeBids = firiClient.getActiveOrders()
             .filter { it.type == ActiveOrder.OrderType.bid }
 
-        if (bids.hasInvalidOrders(marketTicker)) {
-            log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
-            firiClient.deleteActiveOrders()
-        }
+        val bidMaster = BidMaster(activeBids, marketTicker, firiClient)
+            .execute()
 
-        // Check if we should move bid
-        if (bids.hasValidOrders(marketTicker)) {
-            if (bids.hasAnyoutOfSyncBids(marketTicker)) {
-                log.info("We have a valid bid that is out of sync")
-                firiClient.deleteActiveOrders()
-            } else {
-                log.info("We have a valid bid, nothing to do here")
-            }
-        } else {
-            val price = min(marketTicker.maxBid(), marketTicker.bid)
-            val response = firiClient.placeBid(price)
-            log.info("Placed 1 bid @$price")
-        }
+
     }
 }
 
