@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
@@ -42,7 +43,6 @@ fun main() {
             log.info("loaded config.properties")
             props.load(FileInputStream("src/main/resources/config.properties"))
         }
-
 
         val environment = Config(
             staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
@@ -69,22 +69,11 @@ fun main() {
             config = environment
         )
 
-        val ticker = BotTicker(firiClient)
-        Timer("tick").scheduleAtFixedRate(ticker, 2000, 5000)
+        val ticker = Ticker(firiClient)
+        Timer("tick")
+            .scheduleAtFixedRate(ticker, 2000, 5000)
 
     }.start(wait = true)
-}
-
-class BotTicker(private val firiClient: FiriClient) : TimerTask() {
-    override fun run() = runBlocking {
-        val marketTicker = firiClient.fetchMarketTicker()
-        log.info(marketTicker.toString())
-
-        val activeBids = firiClient.getActiveOrders()
-            .filter { it.type == ActiveOrder.OrderType.bid }
-
-        BidMaster(activeBids, marketTicker, firiClient).execute()
-    }
 }
 
 internal fun Application.buildApplication(

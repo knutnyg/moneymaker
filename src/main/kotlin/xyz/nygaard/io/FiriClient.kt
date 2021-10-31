@@ -6,12 +6,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import xyz.nygaard.io.*
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.time.LocalDateTime
-
-
-
 
 
 class FiriClient(val httpclient: HttpClient, val apiKey: String) {

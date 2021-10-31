@@ -3,6 +3,9 @@ package xyz.nygaard
 import io.mockk.coVerify
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.Market
+import xyz.nygaard.io.MarketTicker
 import java.time.LocalDateTime
 
 internal class BidMasterTest {
