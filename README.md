@@ -9,10 +9,12 @@ Moneymaker need your apikeys. Create a `config.properties` file in your resource
 
 # Progress:
 - [X] Api-keys and hello world
-- [ ] Fetch orderbook
 - [X] Fetch local balance
-- [ ] Place order
-- [ ] Pull order
-- [ ] Calculate balance
-- [ ] Weigh orders to regain balance
+- [X] Place bid
+- [X] Remove / update bid
 
+- [ ] Place ask
+- [ ] Remove / update ask
+
+- [ ] Buy BTC (taker)
+- [ ] Buy NOK (taker)
