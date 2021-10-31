@@ -90,8 +90,8 @@ class MyTask(val firiClient: FiriClient) : TimerTask() {
         }
 
         // Check if we should move bid
-        if (bids.validOrders(marketTicker).isNotEmpty()) {
-            if (bids.outOfSyncBids(marketTicker).isNotEmpty()) {
+        if (bids.hasValidOrders(marketTicker)) {
+            if (bids.hasAnyoutOfSyncBids(marketTicker)) {
                 log.info("We have a valid bid that is out of sync")
                 firiClient.deleteActiveOrders()
             } else {
@@ -102,15 +102,11 @@ class MyTask(val firiClient: FiriClient) : TimerTask() {
             val response = firiClient.placeBid(price)
             log.info("Placed 1 bid @$price")
         }
-
-        // keep or delete & recreate
-        // Check if our ask in within bounds
-        // keep or delete & recreate
     }
 }
 
-fun List<ActiveOrder>.validOrders(marketTicker: MarketTicker) = this.filter { it.valid(marketTicker) }
-fun List<ActiveOrder>.outOfSyncBids(marketTicker: MarketTicker) = this.filter { it.valid(marketTicker) }
+fun List<ActiveOrder>.hasValidOrders(marketTicker: MarketTicker) = this.any { it.valid(marketTicker) }
+fun List<ActiveOrder>.hasAnyoutOfSyncBids(marketTicker: MarketTicker) = this.any { it.outOfSync(marketTicker) }
 fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }
 
 internal fun Application.buildApplication(

@@ -113,7 +113,7 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) : IFiriClient {
         val id: Int
     )
 
-    suspend fun placeBid(price: Double, amount: Double = 0.0005, dryRun: Boolean = true): OrderResponse {
+    suspend fun placeBid(price: Double, amount: Double = 0.0001, dryRun: Boolean = true): OrderResponse {
         log.info("Placing bid for $amount BTCNOK @ $price")
 
         if (dryRun) return OrderResponse(123)
