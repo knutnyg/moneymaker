@@ -37,8 +37,8 @@ data class ActiveOrder(
 
     fun outOfSync(marketTicker: MarketTicker): Boolean {
         return when (type) {
-            OrderType.bid -> this.price < (marketTicker.bid * 0.998)
-            OrderType.ask -> this.price > (marketTicker.ask * 1.003)
+            OrderType.bid -> this.price < (marketTicker.bid * 0.9995)
+            OrderType.ask -> this.price > (marketTicker.ask * 1.0001)
         }
     }
 }
