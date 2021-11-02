@@ -57,7 +57,7 @@ internal fun merge(a: List<Action>, b: List<Action>): List<Action> {
     val d = c.filter { it !is ClearOrders }
 
     return when (clearAction) {
-        null -> c
+        null -> c.filter { it !is KeepAsk && it !is KeepBid }
         else -> listOf(clearAction) + d
     }
 }

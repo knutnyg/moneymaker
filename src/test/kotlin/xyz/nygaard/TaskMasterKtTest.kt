@@ -2,6 +2,7 @@ package xyz.nygaard
 
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xyz.nygaard.io.ActiveOrder
 
@@ -60,6 +61,31 @@ internal class TaskMasterKtTest {
         val a = listOf(keepA)
         val b = listOf(keepB)
         val res = merge(a, b)
-        assertEquals(listOf(keepA, keepB), res)
+        assertTrue(res.isEmpty())
     }
+
+    @Test
+    fun `keep a`() {
+        val a = listOf(keepA)
+        val b = emptyList<Action>()
+        val res = merge(a, b)
+        assertTrue(res.isEmpty())
+    }
+
+    @Test
+    fun `keep b`() {
+        val a = emptyList<Action>()
+        val b = listOf(keepB)
+        val res = merge(a, b)
+        assertTrue(res.isEmpty())
+    }
+
+    @Test
+    fun `keep a + b` (){
+        val a = listOf(keepA)
+        val b = listOf(addB)
+        val res = merge(a, b)
+        assertEquals(listOf(addB), res)
+    }
+
 }
