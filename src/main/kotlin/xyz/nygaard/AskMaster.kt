@@ -20,7 +20,7 @@ class AskMaster(
         }
         if (activeAsks.hasValidOrders(marketTicker)) {
             if (activeAsks.hasAnyOutOfSyncBids(marketTicker)) {
-                log.info("We have a valid bid that is out of sync")
+                log.info("We have a valid ask that is out of sync")
                 actions.add(ClearOrders)
 
                 val price = max(marketTicker.minAsk(), marketTicker.ask)
