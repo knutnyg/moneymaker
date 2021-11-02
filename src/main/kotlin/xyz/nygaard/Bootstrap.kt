@@ -29,7 +29,7 @@ import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
 
-val log: Logger = LoggerFactory.getLogger("Lightning Store")
+val log: Logger = LoggerFactory.getLogger("Moneymaker")
 val objectMapper = jacksonObjectMapper()
 
 fun main() {
