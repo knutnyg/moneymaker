@@ -31,7 +31,7 @@ class AskMaster(
                 )
                 actions.add(AddAsk(req = req))
             } else {
-                log.info("We have a valid bid, just keep the bid")
+                log.info("Keeping ask@${activeAsks.first().price}")
                 actions.add(KeepAsk(CreateOrderRequest(ask, activeAsks.first().price)))
             }
         } else {

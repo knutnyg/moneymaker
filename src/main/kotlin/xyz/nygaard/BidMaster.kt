@@ -33,7 +33,7 @@ class BidMaster(
                 )
                 actions.add(AddBid(req = req))
             } else {
-                log.info("We have a valid bid, just keep the bid")
+                log.info("Keeping bid@${activeBids.first().price}")
                 actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
             }
         } else {
