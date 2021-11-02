@@ -70,7 +70,7 @@ fun main() {
 
         val ticker = Ticker(firiClient, taskMaster = TaskMaster(firiClient))
         Timer("tick")
-            .scheduleAtFixedRate(ticker, 2000, 10000)
+            .scheduleAtFixedRate(ticker, 2000, 5000)
 
     }.start(wait = true)
 }
