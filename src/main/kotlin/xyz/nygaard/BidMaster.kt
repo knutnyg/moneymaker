@@ -7,23 +7,22 @@ import xyz.nygaard.io.MarketTicker
 import kotlin.math.min
 
 class BidMaster(
-    val activeOrders: List<ActiveOrder>,
+    private val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker,
 ) {
     fun execute(): List<Action> = runBlocking {
-        val actions = mutableListOf<Action>()
+        val actions = mutableSetOf<Action>()
         val activeBids = activeOrders.filter { it.type == OrderType.bid }
+
         if (activeBids.hasInvalidOrders(marketTicker)) {
             log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
-            actions.add(ClearOrders(OrderType.bid))
+            actions.add(ClearOrders)
         }
 
         if (activeBids.hasValidOrders(marketTicker)) {
             if (activeBids.hasAnyOutOfSyncBids(marketTicker)) {
                 log.info("We have a valid bid that is out of sync")
-                if (!actions.contains(ClearOrders(OrderType.bid))) {
-                    actions.add(ClearOrders(OrderType.bid))
-                }
+                actions.add(ClearOrders)
 
                 val price = min(marketTicker.maxBid(), marketTicker.bid)
                 val req = CreateOrderRequest(
@@ -46,8 +45,7 @@ class BidMaster(
             )
             actions.add(AddBid(req = req))
         }
-
-        return@runBlocking actions
+        actions.toList()
     }
 }
 

@@ -8,52 +8,51 @@ import xyz.nygaard.io.ActiveOrder
 
 internal class TaskMasterKtTest {
 
-    private val clearA = ClearOrders(ActiveOrder.OrderType.ask)
+    private val clear = ClearOrders
     private val addA = AddAsk(mockk())
     private val keepA = KeepAsk(mockk())
 
-    private val clearB = ClearOrders(ActiveOrder.OrderType.bid)
     private val addB = AddBid(mockk())
     private val keepB = KeepBid(mockk())
 
     @Test
     fun `clear a + a + empty b`() {
-        val a = listOf(clearA, addA)
+        val a = listOf(clear, addA)
         val b = emptyList<Action>()
         val res = merge(a, b)
-        assertEquals(listOf(clearA, addA), res)
+        assertEquals(listOf(clear, addA), res)
     }
 
     @Test
     fun `clear a + a + b`() {
-        val a = listOf(clearA, addA)
+        val a = listOf(clear, addA)
         val b = listOf(addB)
         val res = merge(a, b)
-        assertEquals(listOf(clearA, addA, addB), res)
+        assertEquals(listOf(clear, addA, addB), res)
     }
 
     @Test
     fun `clear a + a + clear b + b`() {
-        val a = listOf(clearA, addA)
-        val b = listOf(clearB, addB)
+        val a = listOf(clear, addA)
+        val b = listOf(clear, addB)
         val res = merge(a, b)
-        assertEquals(listOf(clearA, addA, addB), res)
+        assertEquals(listOf(clear, addA, addB), res)
     }
 
     @Test
     fun `keep a + clear b + b`() {
         val a = listOf(keepA)
-        val b = listOf(clearB, addB)
+        val b = listOf(clear, addB)
         val res = merge(a, b)
-        assertEquals(listOf(clearB, keepA, addB), res)
+        assertEquals(listOf(clear, keepA, addB), res)
     }
 
     @Test
     fun `keep b + clear a + a`() {
         val a = listOf(keepB)
-        val b = listOf(clearA, addA)
+        val b = listOf(clear, addA)
         val res = merge(a, b)
-        assertEquals(listOf(clearA, keepB, addA), res)
+        assertEquals(listOf(clear, keepB, addA), res)
     }
 
     @Test

@@ -71,7 +71,7 @@ internal class AskMasterTest {
             amount = 0.0001,
         )
         assertThat(actions).containsExactly(
-            ClearOrders(orderType = ask),
+            ClearOrders,
             AddAsk(req = req),
         )
 
@@ -90,7 +90,7 @@ internal class AskMasterTest {
         )
 
         assertThat(actions).containsExactly(
-            ClearOrders(orderType = ask),
+            ClearOrders,
             AddAsk(req = req),
         )
     }

@@ -1,10 +1,8 @@
 package xyz.nygaard
 
-import xyz.nygaard.io.ActiveOrder
-
 
 sealed interface Action
-data class ClearOrders(val orderType: ActiveOrder.OrderType) : Action
+object ClearOrders : Action
 data class AddBid(val req: CreateOrderRequest) : Action
 data class AddAsk(val req: CreateOrderRequest) : Action
 data class KeepAsk(val req: CreateOrderRequest) : Action
