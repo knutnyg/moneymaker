@@ -48,8 +48,14 @@ internal class BidMasterTest {
         val activeBids = listOf(activeBid(899.0))
 
         val actions = BidMaster(activeBids, tick).execute()
-
-        assertThat(actions).isEmpty()
+        val req = CreateOrderRequest(
+            ActiveOrder.OrderType.bid,
+            price = 899.0,
+            amount = 0.0001,
+        )
+        assertThat(actions).containsExactly(
+            KeepBid(req = req),
+        )
     }
 
     @Test

@@ -7,11 +7,12 @@ import xyz.nygaard.io.MarketTicker
 import kotlin.math.max
 
 class AskMaster(
-    val activeAsks: List<ActiveOrder>,
+    val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker
 ) {
     fun execute(): List<Action> = runBlocking {
         val actions = mutableListOf<Action>()
+        val activeAsks = activeOrders.filter { it.type == ask }
 
         if (activeAsks.hasInvalidOrders(marketTicker)) {
             log.info("Found active asks under threshold: ${marketTicker.minAsk()}")
@@ -30,7 +31,8 @@ class AskMaster(
                 )
                 actions.add(AddAsk(req = req))
             } else {
-                log.info("We have a valid bid, nothing to do here")
+                log.info("We have a valid bid, just keep the bid")
+                actions.add(KeepAsk(CreateOrderRequest(ask, activeAsks.first().price)))
             }
         } else {
             val price = max(marketTicker.minAsk(), marketTicker.ask)

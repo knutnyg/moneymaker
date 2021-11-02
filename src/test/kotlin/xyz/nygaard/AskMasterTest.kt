@@ -49,7 +49,14 @@ internal class AskMasterTest {
         val activeAsks = listOf(activeAsk(1001.0))
 
         val actions = AskMaster(activeAsks, tick).execute()
-        assertThat(actions).isEmpty()
+        val req = CreateOrderRequest(
+            ask,
+            price = 1001.0,
+            amount = 0.0001,
+        )
+        assertThat(actions).containsExactly(
+            KeepAsk(req = req),
+        )
     }
 
     @Test

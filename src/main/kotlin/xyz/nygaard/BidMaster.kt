@@ -7,11 +7,12 @@ import xyz.nygaard.io.MarketTicker
 import kotlin.math.min
 
 class BidMaster(
-    val activeBids: List<ActiveOrder>,
+    val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker,
 ) {
     fun execute(): List<Action> = runBlocking {
         val actions = mutableListOf<Action>()
+        val activeBids = activeOrders.filter { it.type == OrderType.bid }
         if (activeBids.hasInvalidOrders(marketTicker)) {
             log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
             actions.add(ClearOrders(OrderType.bid))
@@ -32,7 +33,8 @@ class BidMaster(
                 )
                 actions.add(AddBid(req = req))
             } else {
-                log.info("We have a valid bid, nothing to do here")
+                log.info("We have a valid bid, just keep the bid")
+                actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
             }
         } else {
             val price = min(marketTicker.maxBid(), marketTicker.bid)

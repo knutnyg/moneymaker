@@ -7,6 +7,8 @@ sealed interface Action
 data class ClearOrders(val orderType: ActiveOrder.OrderType) : Action
 data class AddBid(val req: CreateOrderRequest) : Action
 data class AddAsk(val req: CreateOrderRequest) : Action
+data class KeepAsk(val req: CreateOrderRequest) : Action
+data class KeepBid(val req: CreateOrderRequest) : Action
 
 class TaskMaster(
     private val firiClient: FiriClient,
@@ -19,13 +21,23 @@ class TaskMaster(
         return when (action) {
             is ClearOrders -> handleClearOrder(action)
             is AddBid -> handleAddBid(action)
+            is KeepBid -> handleKeepBid(action)
             is AddAsk -> handleAddAsk(action)
+            is KeepAsk -> handleKeepAsk(action)
         }
     }
 
     private suspend fun handleClearOrder(action: ClearOrders): Action {
         firiClient.deleteActiveOrders()
         return action
+    }
+
+    private suspend fun handleKeepBid(action: KeepBid): Action {
+        return handleAddBid(AddBid(action.req))
+    }
+
+    private suspend fun handleKeepAsk(action: KeepAsk): Action {
+        return handleAddAsk(AddAsk(action.req))
     }
 
     private suspend fun handleAddBid(action: AddBid): Action {
@@ -39,7 +51,7 @@ class TaskMaster(
     }
 }
 
-fun merge(a: List<Action>, b: List<Action>): List<Action> {
+internal fun merge(a: List<Action>, b: List<Action>): List<Action> {
     val c = a + b
     val clearAction = c.filterIsInstance<ClearOrders>().firstOrNull()
     val d = c.filter { it !is ClearOrders }
