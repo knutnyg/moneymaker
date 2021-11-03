@@ -17,7 +17,7 @@ internal class AskMasterTest {
 
         val req = CreateOrderRequest(
             ask,
-            price = 1011.99,
+            price = tick.askPrice(),
             amount = 0.0001,
         )
 
@@ -45,13 +45,13 @@ internal class AskMasterTest {
 
     @Test
     fun `active ask within bounds`() {
-        val tick = MarketTicker(bid = 900.0, ask = 1000.0)
-        val activeAsks = listOf(activeAsk(1001.0))
+        val tick = MarketTicker(bid = 500000.0, ask = 550000.0)
+        val activeAsks = listOf(activeAsk(550001.0))
 
         val actions = AskMaster(activeAsks, tick).execute()
         val req = CreateOrderRequest(
             ask,
-            price = 1001.0,
+            price = 550001.0,
             amount = 0.0001,
         )
         assertThat(actions).containsExactly(

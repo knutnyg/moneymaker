@@ -23,10 +23,9 @@ class AskMaster(
                 log.info("We have a valid ask that is out of sync")
                 actions.add(ClearOrders)
 
-                val price = max(marketTicker.minAsk(), marketTicker.ask)
                 val req = CreateOrderRequest(
                     type = ask,
-                    price = price,
+                    price = marketTicker.askPrice(),
                     amount = 0.0001,
                 )
                 actions.add(AddAsk(req = req))
@@ -35,10 +34,9 @@ class AskMaster(
                 actions.add(KeepAsk(CreateOrderRequest(ask, activeAsks.first().price)))
             }
         } else {
-            val price = max(marketTicker.minAsk(), marketTicker.ask)
             val req = CreateOrderRequest(
                 type = ask,
-                price = price,
+                price = marketTicker.askPrice(),
                 amount = 0.0001,
             )
             actions.add(AddAsk(req = req))

@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType
 import xyz.nygaard.io.MarketTicker
-import kotlin.math.min
 
 class BidMaster(
     private val activeOrders: List<ActiveOrder>,
@@ -24,11 +23,10 @@ class BidMaster(
                 log.info("We have a valid bid that is out of sync")
                 actions.add(ClearOrders)
 
-                val price = min(marketTicker.maxBid(), marketTicker.bid)
                 val req = CreateOrderRequest(
                     type = OrderType.bid,
                     amount = 0.0001,
-                    price = price,
+                    price = marketTicker.bidPrice(),
                 )
                 actions.add(AddBid(req = req))
             } else {
@@ -36,12 +34,10 @@ class BidMaster(
                 actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
             }
         } else {
-            val price = min(marketTicker.maxBid(), marketTicker.bid)
-
             val req = CreateOrderRequest(
                 type = OrderType.bid,
                 amount = 0.0001,
-                price = price,
+                price = marketTicker.bidPrice(),
             )
             actions.add(AddBid(req = req))
         }

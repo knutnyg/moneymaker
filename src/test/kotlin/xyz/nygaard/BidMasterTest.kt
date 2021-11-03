@@ -18,7 +18,7 @@ internal class BidMasterTest {
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = 989.0,
+            price = tick.bidPrice(),
         )
         assertThat(actions).containsExactly(
             AddBid(req = req),
@@ -44,13 +44,13 @@ internal class BidMasterTest {
 
     @Test
     fun `active bid within bounds`() {
-        val tick = MarketTicker(bid = 900.0, ask = 1000.0)
-        val activeBids = listOf(activeBid(899.0))
+        val tick = MarketTicker(bid = 500000.0, ask = 550000.0)
+        val activeBids = listOf(activeBid(499999.0))
 
         val actions = BidMaster(activeBids, tick).execute()
         val req = CreateOrderRequest(
             ActiveOrder.OrderType.bid,
-            price = 899.0,
+            price = 499999.0,
             amount = 0.0001,
         )
         assertThat(actions).containsExactly(
@@ -86,7 +86,7 @@ internal class BidMasterTest {
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = 512766.66,
+            price = tick.bidPrice(),
         )
 
         assertThat(actions).containsExactly(
