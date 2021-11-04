@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import xyz.nygaard.AppState.Companion.appState
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
@@ -44,91 +45,94 @@ data class AppState(
     val lastUpdatedAt: Instant,
 ) {
     companion object {
-        fun update(f: Function<AppState>): AppState = appState.updateAndGet {
-            it.copy(
+        private val appState: AtomicReference<AppState> = AtomicReference(
+            AppState(
+                activeTrades = ActiveTradesState(activeOrders = listOf()),
+                prevActionSet = listOf(),
                 lastUpdatedAt = Instant.now(),
             )
+        )
+
+        fun update(f: (AppState) -> AppState): AppState = appState.updateAndGet {
+            f(it).copy(
+                lastUpdatedAt = Instant.now(),
+            )
+        }
+
+        fun get(): AppState {
+            return appState.get().copy()
         }
     }
 }
 
-val appState: AtomicReference<AppState> = AtomicReference(
-    AppState(
-        activeTrades = ActiveTradesState(activeOrders = listOf()),
-        prevActionSet = listOf(),
-        lastUpdatedAt = Instant.now(),
-    )
-)
-
 fun main() {
-    embeddedServer(Netty, port = 8020, host = "localhost") {
+    val props = Properties()
 
-        val props = Properties()
+    val propertiesFile = File("src/main/resources/config.properties")
+    if (propertiesFile.exists()) {
+        log.info("loaded config.properties")
+        props.load(FileInputStream("src/main/resources/config.properties"))
+    }
 
-        val propertiesFile = File("src/main/resources/config.properties")
-        if (propertiesFile.exists()) {
-            log.info("loaded config.properties")
-            props.load(FileInputStream("src/main/resources/config.properties"))
-        }
+    val environment = Config(
+        staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
+        clientId = props["CLIENT_ID"].toString(),
+        clientSecret = props["CLIENT_SECRET"].toString(),
+        apiKey = props["API_KEY"].toString(),
+        firiBaseUrl = "https://api.firi.com/v2/"
+    )
 
-        val environment = Config(
-            staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
-            clientId = props["CLIENT_ID"].toString(),
-            clientSecret = props["CLIENT_SECRET"].toString(),
-            apiKey = props["API_KEY"].toString(),
-            firiBaseUrl = "https://api.firi.com/v2/"
-        )
-
-        val httpClient = HttpClient(CIO) {
-            install(JsonFeature) {
-                serializer = JacksonSerializer() {
-                    disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                    registerModule(JavaTimeModule())
-                }
+    val httpClient = HttpClient(CIO) {
+        install(JsonFeature) {
+            serializer = JacksonSerializer() {
+                disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                registerModule(JavaTimeModule())
             }
         }
+    }
 
-        val firiClient = FiriClient(httpClient, environment.apiKey)
+    val firiClient = FiriClient(httpClient, environment.apiKey)
 
+    val active = runBlocking { firiClient.getActiveOrders() }
+    AppState.update {
+        it.copy(
+            activeTrades = it.activeTrades.copy(
+                activeOrders = active,
+            ),
+            lastUpdatedAt = Instant.now(),
+        )
+    }
+
+    val ticker = Ticker(
+        firiClient,
+        taskMaster = TaskMaster(firiClient),
+        onActions = { actions ->
+            AppState.update {
+                it.copy(
+                    prevActionSet = actions,
+                    lastUpdatedAt = Instant.now(),
+                )
+            }
+        },
+        onActiveOrders = { activeOrders ->
+            AppState.update {
+                it.copy(
+                    activeTrades = it.activeTrades.copy(activeOrders = activeOrders),
+                    lastUpdatedAt = Instant.now(),
+                )
+            }
+        },
+    )
+
+    Timer("tick")
+        .scheduleAtFixedRate(ticker, 2000, 5000)
+
+    embeddedServer(Netty, port = 8020, host = "localhost") {
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
             firiClient = firiClient,
             config = environment
         )
-
-        val active = runBlocking { firiClient.getActiveOrders() }
-        appState.updateAndGet {
-            it.copy(
-                activeTrades = it.activeTrades.copy(
-                    activeOrders = active,
-                ),
-                lastUpdatedAt = Instant.now(),
-            )
-        }
-
-        val ticker = Ticker(
-            firiClient,
-            taskMaster = TaskMaster(firiClient),
-            onActions = { actions ->
-                appState.updateAndGet {
-                    it.copy(
-                        prevActionSet = actions,
-                        lastUpdatedAt = Instant.now(),
-                    )
-                }
-            },
-            onActiveOrders = { activeOrders ->
-                appState.updateAndGet {
-                    it.copy(
-                        activeTrades = it.activeTrades.copy(activeOrders = activeOrders),
-                        lastUpdatedAt = Instant.now(),
-                    )
-                }
-            },
-        )
-        Timer("tick")
-            .scheduleAtFixedRate(ticker, 2000, 5000)
-
     }.start(wait = true)
 }
 
@@ -176,7 +180,7 @@ internal fun Application.buildApplication(
                 call.respond(market)
             }
             get("/app/state") {
-                val state = appState.get()
+                val state = AppState.get()
                 call.respond(state)
             }
         }
