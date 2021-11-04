@@ -19,9 +19,17 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.util.pipeline.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.broadcast
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -30,11 +38,9 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
-import java.lang.Exception
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
@@ -50,7 +56,7 @@ data class AppState(
     val lastUpdatedAt: Instant,
 ) {
     companion object {
-        private val listeners: ConcurrentHashMap<ApplicationCall, suspend (AppState) -> Unit> = ConcurrentHashMap()
+        private val listeners: ConcurrentHashMap<ApplicationCall, (AppState) -> Unit> = ConcurrentHashMap()
 
         private val appState: AtomicReference<AppState> = AtomicReference(
             AppState(
@@ -60,13 +66,11 @@ data class AppState(
             )
         )
 
-        internal suspend fun notify(state: AppState) {
-            withContext(Dispatchers.IO) {
-                listeners.forEach { (_, u) -> u(state) }
-            }
+        internal fun notify(state: AppState) {
+            listeners.forEach { (_, u) -> u(state) }
         }
 
-        fun listen(o: ApplicationCall, l: suspend (AppState) -> Unit) {
+        fun listen(o: ApplicationCall, l: (AppState) -> Unit) {
             listeners.putIfAbsent(o, l)
         }
 
@@ -78,11 +82,7 @@ data class AppState(
             val next = f(it).copy(
                 lastUpdatedAt = Instant.now(),
             )
-            runBlocking {
-                async(Dispatchers.IO) {
-                    notify(next)
-                }
-            }
+            notify(next)
             next
         }
 
@@ -214,35 +214,39 @@ internal fun Application.buildApplication(
                 call.respond(state)
             }
             get("/app/state/listen") {
-                call.response.cacheControl(CacheControl.NoCache(null))
-                call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                    val now = AppState.get()
+                val now = AppState.get()
 
-                    try {
-                        val c = flow {
-                            AppState.listen(call) { state: AppState ->
-                                emit(state)
-                            }
-                        }
-                            .onCompletion {
-                                AppState.removeListener(call)
-                            }
-                            .onStart { emit(now) }
-                            .collect {
-                                withContext(Dispatchers.IO) {
-                                    log.info("push state for {}", call.request.origin.remoteHost)
-                                    val data = objectMapper.writeValueAsString(it)
-                                    write("data: ${data}\n\n")
-                                    flush()
-                                }
-                            }
-                    } catch (e: Exception) {
-                        log.warn("error: ", e)
-                    } finally {
-                        log.info("cleanup listener")
+                val events = callbackFlow<AppState> {
+                    trySend(now)
+                    AppState.listen(call) { state: AppState ->
+                        trySend(state)
+                    }
+
+                    awaitClose {
                         AppState.removeListener(call)
                     }
                 }
+
+                try {
+                    call.response.cacheControl(CacheControl.NoCache(null))
+                    call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                        events.collect {
+                            val state: AppState = it
+                            withContext(Dispatchers.IO) {
+                                log.info("push state for {}", call.request.origin.remoteHost)
+                                val data = objectMapper.writeValueAsString(state)
+                                write("data: ${data}\n\n")
+                                flush()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    log.warn("error: ", e)
+                } finally {
+                    log.info("cleanup listener")
+                    AppState.removeListener(call)
+                }
+
             }
         }
 

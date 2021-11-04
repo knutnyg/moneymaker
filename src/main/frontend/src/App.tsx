@@ -46,9 +46,10 @@ const DataSource: React.FC = () => {
 
     useEffect(() => {
         //const source = new EventSource('/api/app/state/listen');
+        console.log('subscribe')
         const source = new EventSource('//localhost:8020/api/app/state/listen');
         source.onmessage = (evt) => {
-            console.log('evt=', evt);
+            //console.log('evt=', evt);
             const jsonData = evt.data;
             try {
                 const nextState = JSON.parse(jsonData);
@@ -67,6 +68,7 @@ const DataSource: React.FC = () => {
         }
 
         return () => {
+            console.log('unsubscribe')
             source.close();
         }
     }, [setAppState])
