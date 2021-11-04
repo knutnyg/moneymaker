@@ -23,14 +23,42 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import xyz.nygaard.core.Ticker
+import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
 val objectMapper = jacksonObjectMapper()
+
+data class ActiveTradesState(
+    val activeOrders: List<ActiveOrder>,
+)
+
+data class AppState(
+    val activeTrades: ActiveTradesState,
+    val prevActionSet: List<Action>,
+    val lastUpdatedAt: Instant,
+) {
+    companion object {
+        fun update(f: Function<AppState>): AppState = appState.updateAndGet {
+            it.copy(
+                lastUpdatedAt = Instant.now(),
+            )
+        }
+    }
+}
+
+val appState: AtomicReference<AppState> = AtomicReference(
+    AppState(
+        activeTrades = ActiveTradesState(activeOrders = listOf()),
+        prevActionSet = listOf(),
+        lastUpdatedAt = Instant.now(),
+    )
+)
 
 fun main() {
     embeddedServer(Netty, port = 8020, host = "localhost") {
@@ -68,7 +96,36 @@ fun main() {
             config = environment
         )
 
-        val ticker = Ticker(firiClient, taskMaster = TaskMaster(firiClient))
+        val active = runBlocking { firiClient.getActiveOrders() }
+        appState.updateAndGet {
+            it.copy(
+                activeTrades = it.activeTrades.copy(
+                    activeOrders = active,
+                ),
+                lastUpdatedAt = Instant.now(),
+            )
+        }
+
+        val ticker = Ticker(
+            firiClient,
+            taskMaster = TaskMaster(firiClient),
+            onActions = { actions ->
+                appState.updateAndGet {
+                    it.copy(
+                        prevActionSet = actions,
+                        lastUpdatedAt = Instant.now(),
+                    )
+                }
+            },
+            onActiveOrders = { activeOrders ->
+                appState.updateAndGet {
+                    it.copy(
+                        activeTrades = it.activeTrades.copy(activeOrders = activeOrders),
+                        lastUpdatedAt = Instant.now(),
+                    )
+                }
+            },
+        )
         Timer("tick")
             .scheduleAtFixedRate(ticker, 2000, 5000)
 
@@ -117,6 +174,10 @@ internal fun Application.buildApplication(
             get("/market") {
                 val market = firiClient.fetchMarketTicker()
                 call.respond(market)
+            }
+            get("/app/state") {
+                val state = appState.get()
+                call.respond(state)
             }
         }
 
