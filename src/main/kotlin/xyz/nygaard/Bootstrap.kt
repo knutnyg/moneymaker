@@ -216,21 +216,22 @@ internal fun Application.buildApplication(
                 call.respondTextWriter(contentType = ContentType.Text.EventStream) {
                     val now = AppState.get()
 
-                    withContext(Dispatchers.IO) {
-                        val data = objectMapper.writeValueAsString(now)
-                        write("data: ${data}\n\n")
-                        flush()
+                    AppState.listen(call) { state: AppState ->
+                        withContext(Dispatchers.IO) {
+                            log.info("push state for {}", call.request.origin.remoteHost)
+                            val data = objectMapper.writeValueAsString(state)
+                            write("data: ${data}\n\n")
+                            flush()
+                        }
                     }
 
                     try {
-                        AppState.listen(call) { state: AppState ->
-                            withContext(Dispatchers.IO) {
-                                log.info("push state for {}", call.request.local.host)
-                                val data = objectMapper.writeValueAsString(state)
-                                write("data: ${data}\n\n")
-                                flush()
-                            }
+                        withContext(Dispatchers.IO) {
+                            val data = objectMapper.writeValueAsString(now)
+                            write("data: ${data}\n\n")
+                            flush()
                         }
+
                         while (true) {
                             delay(10_000)
                         }
