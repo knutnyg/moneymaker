@@ -21,6 +21,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.pipeline.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -29,6 +30,7 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
+import java.lang.Exception
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -216,25 +218,26 @@ internal fun Application.buildApplication(
                 call.respondTextWriter(contentType = ContentType.Text.EventStream) {
                     val now = AppState.get()
 
-                    AppState.listen(call) { state: AppState ->
-                        withContext(Dispatchers.IO) {
-                            log.info("push state for {}", call.request.origin.remoteHost)
-                            val data = objectMapper.writeValueAsString(state)
-                            write("data: ${data}\n\n")
-                            flush()
-                        }
-                    }
-
                     try {
-                        withContext(Dispatchers.IO) {
-                            val data = objectMapper.writeValueAsString(now)
-                            write("data: ${data}\n\n")
-                            flush()
+                        val c = flow {
+                            AppState.listen(call) { state: AppState ->
+                                emit(state)
+                            }
                         }
-
-                        while (true) {
-                            delay(10_000)
-                        }
+                            .onCompletion {
+                                AppState.removeListener(call)
+                            }
+                            .onStart { emit(now) }
+                            .collect {
+                                withContext(Dispatchers.IO) {
+                                    log.info("push state for {}", call.request.origin.remoteHost)
+                                    val data = objectMapper.writeValueAsString(it)
+                                    write("data: ${data}\n\n")
+                                    flush()
+                                }
+                            }
+                    } catch (e: Exception) {
+                        log.warn("error: ", e)
                     } finally {
                         log.info("cleanup listener")
                         AppState.removeListener(call)
