@@ -3,13 +3,13 @@ package xyz.nygaard.io
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 
 internal class ActiveOrderTest {
 
     val marketBigSpread = MarketTicker(700.0, 1000.0)
     val marketSmallSpread = MarketTicker(10000.0, 10001.0)
-    val activeBid1000 = ActiveOrder(1, Market.BTCNOK, ActiveOrder.OrderType.bid, 1000.0, 1.0, 1.0, 1.0, 0.0, LocalDateTime.now())
+    val activeBid1000 = ActiveOrder(1, Market.BTCNOK, ActiveOrder.OrderType.bid, 1000.0, 1.0, 1.0, 1.0, 0.0, Instant.now())
 
     @Test
     fun `price ask with large spread`() {

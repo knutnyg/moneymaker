@@ -2,7 +2,7 @@ package xyz.nygaard.io
 
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.LocalDateTime
+import java.time.Instant
 import kotlin.math.max
 import kotlin.math.min
 
@@ -26,7 +26,7 @@ data class ActiveOrder(
     val amount: Double,
     val matched: Double,
     val cancelled: Double,
-    val created_at: LocalDateTime
+    val created_at: Instant
 ) {
     enum class OrderType { bid, ask }
 

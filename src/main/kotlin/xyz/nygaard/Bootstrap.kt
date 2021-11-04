@@ -12,17 +12,18 @@ import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.features.*
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.jackson.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import kotlinx.coroutines.runBlocking
+import io.ktor.util.pipeline.*
+import kotlinx.coroutines.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import xyz.nygaard.AppState.Companion.appState
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
@@ -30,10 +31,12 @@ import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
-val objectMapper = jacksonObjectMapper()
+val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
 data class ActiveTradesState(
     val activeOrders: List<ActiveOrder>,
@@ -45,6 +48,8 @@ data class AppState(
     val lastUpdatedAt: Instant,
 ) {
     companion object {
+        private val listeners: ConcurrentHashMap<ApplicationCall, suspend (AppState) -> Unit> = ConcurrentHashMap()
+
         private val appState: AtomicReference<AppState> = AtomicReference(
             AppState(
                 activeTrades = ActiveTradesState(activeOrders = listOf()),
@@ -53,10 +58,30 @@ data class AppState(
             )
         )
 
+        internal suspend fun notify(state: AppState) {
+            withContext(Dispatchers.IO) {
+                listeners.forEach { (_, u) -> u(state) }
+            }
+        }
+
+        fun listen(o: ApplicationCall, l: suspend (AppState) -> Unit) {
+            listeners.putIfAbsent(o, l)
+        }
+
+        fun removeListener(o: ApplicationCall) {
+            listeners.remove(o)
+        }
+
         fun update(f: (AppState) -> AppState): AppState = appState.updateAndGet {
-            f(it).copy(
+            val next = f(it).copy(
                 lastUpdatedAt = Instant.now(),
             )
+            runBlocking {
+                async(Dispatchers.IO) {
+                    notify(next)
+                }
+            }
+            next
         }
 
         fun get(): AppState {
@@ -140,9 +165,12 @@ internal fun Application.buildApplication(
     staticResourcesPath: String,
     firiClient: FiriClient,
     config: Config,
-    httpClient: HttpClient = HttpClient(CIO)
+    httpClient: HttpClient = HttpClient(CIO),
 ) {
     installContentNegotiation()
+    install(CORS) {
+        anyHost()
+    }
     install(XForwardedHeaderSupport)
     install(CallLogging) {
         level = Level.TRACE
@@ -182,6 +210,35 @@ internal fun Application.buildApplication(
             get("/app/state") {
                 val state = AppState.get()
                 call.respond(state)
+            }
+            get("/app/state/listen") {
+                call.response.cacheControl(CacheControl.NoCache(null))
+                call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                    val now = AppState.get()
+
+                    withContext(Dispatchers.IO) {
+                        val data = objectMapper.writeValueAsString(now)
+                        write("data: ${data}\n\n")
+                        flush()
+                    }
+
+                    try {
+                        AppState.listen(call) { state: AppState ->
+                            withContext(Dispatchers.IO) {
+                                log.info("push state for {}", call.request.local.host)
+                                val data = objectMapper.writeValueAsString(state)
+                                write("data: ${data}\n\n")
+                                flush()
+                            }
+                        }
+                        while (true) {
+                            delay(10_000)
+                        }
+                    } finally {
+                        log.info("cleanup listener")
+                        AppState.removeListener(call)
+                    }
+                }
             }
         }
 
@@ -232,7 +289,7 @@ data class Config(
     val firiBaseUrl: String,
     val apiKey: String,
     val clientId: String,
-    val clientSecret: String
+    val clientSecret: String,
 )
 
 fun getEnvOrDefault(name: String, defaultValue: String): String {

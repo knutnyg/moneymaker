@@ -6,7 +6,7 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
-import java.time.LocalDateTime
+import java.time.Instant
 
 internal class AskMasterTest {
 
@@ -104,6 +104,6 @@ internal class AskMasterTest {
         amount = 1.0,
         matched = 0.0,
         cancelled = 0.0,
-        created_at = LocalDateTime.now()
+        created_at = Instant.now()
     )
 }
