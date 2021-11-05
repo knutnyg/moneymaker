@@ -6,9 +6,10 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import xyz.nygaard.io.*
+import java.math.BigDecimal
 
 
-data class CreateOrderRequest (
+data class CreateOrderRequest(
     val type: ActiveOrder.OrderType,
     val price: Double,
     val amount: Double = 0.0001,
@@ -19,16 +20,18 @@ data class AccountBalance(val currencies: List<CurrencyBalance>)
 
 data class CurrencyBalance(
     val currency: String,
-    val balance: Double,
-    val hold: Double,
-    val available: Double,
+    val balance: BigDecimal,
+    val hold: BigDecimal,
+    val available: BigDecimal,
 )
+
+enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 
 class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     private val baseUrl = "https://api.firi.com/v2"
 
     suspend fun getBalance(): AccountBalance {
-        val res: HttpResponse = httpclient.get("${baseUrl}/orders/${Market.BTCNOK}") {
+        val res: HttpResponse = httpclient.get("${baseUrl}/balances") {
             header("miraiex-access-key", apiKey)
         }
         return try {

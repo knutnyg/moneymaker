@@ -184,17 +184,8 @@ internal fun Application.buildApplication(
             registerSelftestApi(httpClient)
             get("/balance") {
                 log.info("looking up balance")
-                httpClient.use {
-                    val res: HttpResponse = it.get("${config.firiBaseUrl}/balances") {
-                        header("miraiex-access-key", config.apiKey)
-                        val timestamp = Instant.now().epochSecond
-                        parameter("timestamp", timestamp.toString())
-                        parameter("validity", 5000)
-                        header("miraiex-user-clientid", config.clientId)
-                        header("miraiex-user-signature", createSignature(config.clientSecret, timestamp.toString()))
-                    }
-                    call.respond(res.readText())
-                }
+                val balance = firiClient.getBalance()
+                call.respond(balance)
             }
             get("/orders/open") {
                 log.info("fetching open orders")
