@@ -19,7 +19,7 @@ data class CreateOrderRequest(
     val market: String = "BTCNOK",
 )
 
-data class AccountBalance(val currencies: List<CurrencyBalance>)
+data class AccountBalance(val currencies: Map<Currency, CurrencyBalance>)
 
 data class CurrencyBalance(
     val currency: String,
@@ -46,7 +46,7 @@ class FiriClient(
 
         return try {
             val currencies: List<CurrencyBalance> = res.receive()
-            AccountBalance(currencies = currencies)
+            AccountBalance(currencies = currencies.associateBy { Currency.valueOf(it.currency) })
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
             throw RuntimeException()

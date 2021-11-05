@@ -5,6 +5,17 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType
 import xyz.nygaard.io.MarketTicker
 
+class BalanceMaster(
+    private val account: AccountBalance,
+    private val marketTicker: MarketTicker,
+) {
+    fun execute(): List<Action> {
+        val btc = account.currencies[Currency.BTC]
+        
+        return listOf()
+    }
+}
+
 class BidMaster(
     private val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker,
