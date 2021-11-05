@@ -15,9 +15,30 @@ data class CreateOrderRequest (
     val market: String = "BTCNOK",
 )
 
-class FiriClient(val httpclient: HttpClient, val apiKey: String) {
+data class AccountBalance(val currencies: List<CurrencyBalance>)
 
+data class CurrencyBalance(
+    val currency: String,
+    val balance: Double,
+    val hold: Double,
+    val available: Double,
+)
+
+class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     private val baseUrl = "https://api.firi.com/v2"
+
+    suspend fun getBalance(): AccountBalance {
+        val res: HttpResponse = httpclient.get("${baseUrl}/orders/${Market.BTCNOK}") {
+            header("miraiex-access-key", apiKey)
+        }
+        return try {
+            val currencies: List<CurrencyBalance> = res.receive()
+            AccountBalance(currencies = currencies)
+        } catch (e: Exception) {
+            log.info("Failed to fetch orders", e)
+            throw RuntimeException()
+        }
+    }
 
     suspend fun getActiveOrders(): List<ActiveOrder> {
         val res: HttpResponse = httpclient.get("${baseUrl}/orders/${Market.BTCNOK}") {
