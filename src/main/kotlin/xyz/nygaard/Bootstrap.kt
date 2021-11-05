@@ -78,6 +78,8 @@ data class AppState(
             listeners.remove(o)
         }
 
+        fun listenersCount() = listeners.size
+
         fun update(f: (AppState) -> AppState): AppState = appState.updateAndGet {
             val next = f(it).copy(
                 lastUpdatedAt = Instant.now(),
@@ -272,6 +274,15 @@ internal fun Application.buildApplication(
 fun Route.registerSelftestApi(httpClient: HttpClient) {
     get("/isAlive") {
         call.respondText("I'm alive! :)")
+    }
+    get("/health") {
+        val state = AppState.get()
+        val listeners = AppState.listenersCount()
+
+        call.respond(mapOf(
+            "state" to state,
+            "listeners" to listeners,
+        ))
     }
     get("/firi") {
         log.info("looking up markets")
