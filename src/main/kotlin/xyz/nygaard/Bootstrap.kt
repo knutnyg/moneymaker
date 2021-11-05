@@ -119,6 +119,7 @@ fun main() {
         firiBaseUrl = "https://api.firi.com/v2/"
     )
 
+    val noLog = true
     val httpClient = HttpClient(CIO) {
         install(JsonFeature) {
             serializer = JacksonSerializer() {
@@ -129,6 +130,9 @@ fun main() {
         install("RequestLogging") {
             val startedAtKey = AttributeKey<Long>("started-at")
 
+            if (noLog) {
+                return@install
+            }
             sendPipeline.intercept(HttpSendPipeline.Monitoring) {
                 val start = Instant.now().toEpochMilli()
                 context.attributes.put(startedAtKey, start)
