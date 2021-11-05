@@ -19,7 +19,7 @@ class Ticker(
         val marketTicker = marketTickerCall.await()
         val activeOrders = activeOrdersCall.await()
 
-        val activeOrders = firiClient.getActiveOrders()
+        log.info(marketTicker.toString())
         onActiveOrders?.accept(activeOrders)
 
         val bidActions = BidMaster(activeOrders, marketTicker).execute()
