@@ -13,8 +13,11 @@ class Ticker(
     private val onActions: Consumer<List<Action>>?,
 ) : TimerTask() {
     override fun run() = runBlocking {
-        val marketTicker = firiClient.fetchMarketTicker()
-        log.info(marketTicker.toString())
+        val marketTickerCall = async { firiClient.fetchMarketTicker() }
+        val activeOrdersCall = async { firiClient.getActiveOrders() }
+
+        val marketTicker = marketTickerCall.await()
+        val activeOrders = activeOrdersCall.await()
 
         val activeOrders = firiClient.getActiveOrders()
         onActiveOrders?.accept(activeOrders)
@@ -24,6 +27,7 @@ class Ticker(
 
         val actions = merge(bidActions, askActions)
         taskMaster.run(actions)
+
         onActions?.accept(actions)
 
         return@runBlocking
