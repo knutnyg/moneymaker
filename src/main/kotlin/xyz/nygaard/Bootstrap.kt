@@ -8,7 +8,9 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
+import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.features.*
@@ -19,6 +21,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -32,12 +35,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import org.slf4j.event.Level
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -94,6 +99,9 @@ data class AppState(
     }
 }
 
+fun getRequestId(): String = MDC.get("r-id") ?: generateRequestId()
+fun generateRequestId(): String = UUID.randomUUID().toString()
+
 fun main() {
     val props = Properties()
 
@@ -117,6 +125,38 @@ fun main() {
                 disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 registerModule(JavaTimeModule())
             }
+        }
+        install("RequestLogging") {
+            val startedAtKey = AttributeKey<Long>("started-at")
+
+            sendPipeline.intercept(HttpSendPipeline.Monitoring) {
+                val start = Instant.now().toEpochMilli()
+                context.attributes.put(startedAtKey, start)
+                log.info(
+                    "Request:  ---> [{}] {} {}",
+                    context.headers.get("X-Request-ID") ?: "NONE",
+                    context.method.value,
+                    Url(context.url),
+                )
+            }
+            receivePipeline.intercept(HttpReceivePipeline.After) {
+                val start = context.attributes[startedAtKey]
+                val elapsedMs = Instant.now().toEpochMilli() - start
+                log.info(
+                    "Response: <--- [{}] {} {}: {} in {}ms",
+                    context.request.headers["X-Request-ID"] ?: "NONE",
+                    context.request.method.value,
+                    context.request.url,
+                    context.response.status.toString(),
+                    elapsedMs,
+                )
+            }
+        }
+        //install(Logging) {
+        //    level = LogLevel.INFO
+        //}
+        defaultRequest {
+            header("X-Request-ID", getRequestId())
         }
     }
 

@@ -2,11 +2,14 @@ package xyz.nygaard
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import org.slf4j.MDC
 import xyz.nygaard.io.*
 import java.math.BigDecimal
+import java.util.*
 
 
 data class CreateOrderRequest(
@@ -27,13 +30,20 @@ data class CurrencyBalance(
 
 enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 
-class FiriClient(val httpclient: HttpClient, val apiKey: String) {
-    private val baseUrl = "https://api.firi.com/v2"
-
-    suspend fun getBalance(): AccountBalance {
-        val res: HttpResponse = httpclient.get("${baseUrl}/balances") {
+class FiriClient(
+    private val httpclient: HttpClient,
+    private val apiKey: String,
+    private val baseUrl: String = "https://api.firi.com/v2",
+) {
+    val client = httpclient.config {
+        defaultRequest {
             header("miraiex-access-key", apiKey)
         }
+    }
+
+    suspend fun getBalance(): AccountBalance {
+        val res: HttpResponse = client.get("${baseUrl}/balances")
+
         return try {
             val currencies: List<CurrencyBalance> = res.receive()
             AccountBalance(currencies = currencies)
@@ -44,9 +54,8 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     }
 
     suspend fun getActiveOrders(): List<ActiveOrder> {
-        val res: HttpResponse = httpclient.get("${baseUrl}/orders/${Market.BTCNOK}") {
-            header("miraiex-access-key", apiKey)
-        }
+        val res: HttpResponse = client.get("${baseUrl}/orders/${Market.BTCNOK}")
+
         return try {
             res.receive()
         } catch (e: Exception) {
@@ -56,9 +65,7 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     }
 
     suspend fun deleteActiveOrders() {
-        val res: HttpResponse = httpclient.delete("${baseUrl}/orders/${Market.BTCNOK}") {
-            header("miraiex-access-key", apiKey)
-        }
+        val res: HttpResponse = client.delete("${baseUrl}/orders/${Market.BTCNOK}")
         if (res.status.isSuccess()) {
             log.info("Deleted all open orders")
         } else {
@@ -67,7 +74,7 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     }
 
     suspend fun fetchMarketTicker(): MarketTicker {
-        val res: HttpResponse = httpclient.get("${baseUrl}/markets/${Market.BTCNOK}/ticker")
+        val res: HttpResponse = client.get("${baseUrl}/markets/${Market.BTCNOK}/ticker")
         return try {
             res.receive()
         } catch (e: Exception) {
@@ -82,9 +89,8 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
         val price = req.price
         val amount = req.amount
         val type = req.type
-        val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
+        val res: HttpResponse = client.post("${baseUrl}/orders") {
             contentType(ContentType.Application.Json)
-            header("miraiex-access-key", apiKey)
             this.body = OrderRequest(
                 market = req.market,
                 type = type.name.lowercase(),
@@ -103,9 +109,8 @@ class FiriClient(val httpclient: HttpClient, val apiKey: String) {
     suspend fun placeAsk(price: Double, amount: Double = 0.0001): OrderResponse {
         log.info("Placing ask for $amount BTCNOK @ $price")
 
-        val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
+        val res: HttpResponse = client.post("${baseUrl}/orders") {
             contentType(ContentType.Application.Json)
-            header("miraiex-access-key", apiKey)
             this.body = OrderRequest(
                 type = "ask",
                 price = price.toString(),
