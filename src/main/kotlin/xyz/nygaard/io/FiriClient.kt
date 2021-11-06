@@ -31,13 +31,16 @@ data class CurrencyBalance(
 enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 
 class FiriClient(
-    private val httpclient: HttpClient,
     private val apiKey: String,
     private val baseUrl: String = "https://api.firi.com/v2",
+    httpclient: HttpClient
 ) {
-    val client = httpclient.config {
-        defaultRequest {
-            header("miraiex-access-key", apiKey)
+    private val client: HttpClient
+    init {
+        client = httpclient.config {
+            defaultRequest {
+                header("miraiex-access-key", apiKey)
+            }
         }
     }
 
