@@ -47,8 +47,8 @@ data class ActiveOrder(
             }
         } else {
             when (type) {
-                OrderType.bid -> this.price > marketTicker.bid || this.price < (marketTicker.bid * 0.99)
-                OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.01)
+                OrderType.bid -> this.price > marketTicker.bid || this.price < (marketTicker.bid * 0.997)
+                OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.003)
             }
         }
     }

@@ -63,6 +63,26 @@ internal class ActiveOrderTest {
         assertTrue(activeOrder(ActiveOrder.OrderType.bid, 850.0).outOfSync(MarketTicker(990.0, 1000.0)))
     }
 
+    @Test
+    fun `bid close to bid high spread under limit`() {
+        assertFalse(activeOrder(ActiveOrder.OrderType.bid, 529000.0).outOfSync(MarketTicker(530000.0, 540000.0)))
+    }
+
+    @Test
+    fun `bid close to bid high spread over limit`() {
+        assertTrue(activeOrder(ActiveOrder.OrderType.bid, 528000.0).outOfSync(MarketTicker(530000.0, 540000.0)))
+    }
+
+    @Test
+    fun `ask close to ask high spread under limit`() {
+        assertFalse(activeOrder(ActiveOrder.OrderType.ask, 540500.0).outOfSync(MarketTicker(530000.0, 540000.0)))
+    }
+
+    @Test
+    fun `ask close to ask high spread over limit`() {
+        assertTrue(activeOrder(ActiveOrder.OrderType.ask, 542000.0).outOfSync(MarketTicker(530000.0, 540000.0)))
+    }
+
     private fun activeOrder(type: ActiveOrder.OrderType, price: Double) =
         ActiveOrder(1, Market.BTCNOK, type, price, 1.0, 1.0, 1.0, 0.0, Instant.now())
 }
