@@ -47,24 +47,31 @@ data class ActiveOrder(
 
 enum class Market { BTCNOK }
 
+class PriceStrategy(
+    val minAskSpread: Double = 1.5,
+    val minBidSpread: Double = 1.5
+)
+
 data class MarketTicker(
     val bid: Double,
     val ask: Double,
-    val spread: Double = (ask - bid)
+    val spread: Double = (ask - bid),
+    val priceStrategy: PriceStrategy = PriceStrategy()
 ) {
 
     private fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
-    internal fun minAsk(scalar: BigDecimal = BID_SCALAR): Double = (BigDecimal(bid) * scalar).setScale(2, RoundingMode.HALF_UP).toDouble()
-    internal fun maxBid(scalar: BigDecimal = ASK_SCALAR): Double = (BigDecimal(ask) * scalar).setScale(2, RoundingMode.HALF_UP).toDouble()
+    internal fun minAsk(): Double =
+        (bid.toBigDecimal() * priceStrategy.minAskSpread.toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
 
-    fun askPrice(scalar: BigDecimal = BID_SCALAR) = max(minAsk(scalar), ask)
-    fun bidPrice(scalar: BigDecimal = ASK_SCALAR) = min(maxBid(scalar), bid)
+    internal fun maxBid(): Double =
+        (ask.toBigDecimal() * (1.0 + priceStrategy.minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP)
+            .toDouble()
+
+    fun askPrice() = max(minAsk(), ask)
+    fun bidPrice() = min(maxBid(), bid)
 
     override fun toString(): String {
         return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
     }
 }
-
-val ASK_SCALAR = BigDecimal(0.9855)
-val BID_SCALAR = BigDecimal(1.015)
