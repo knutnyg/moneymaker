@@ -48,9 +48,15 @@ data class ActiveOrder(
 enum class Market { BTCNOK }
 
 class PriceStrategy(
-    val minAskSpread: Double = 1.012,
-    val minBidSpread: Double = 0.988
-)
+    private val minAskSpread: Double = 1.012,
+    private val minBidSpread: Double = 0.988
+) {
+    internal fun minAsk(bid: Double): Double =
+        (bid.toBigDecimal() * minAskSpread.toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
+
+    internal fun maxBid(ask: Double): Double =
+        (ask.toBigDecimal() * (minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
+}
 
 data class MarketTicker(
     val bid: Double,
@@ -61,12 +67,8 @@ data class MarketTicker(
 
     private fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
-    internal fun minAsk(): Double =
-        (bid.toBigDecimal() * priceStrategy.minAskSpread.toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
-
-    internal fun maxBid(): Double =
-        (ask.toBigDecimal() * (priceStrategy.minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP)
-            .toDouble()
+    internal fun minAsk(): Double = priceStrategy.minAsk(bid)
+    internal fun maxBid(): Double = priceStrategy.maxBid(ask)
 
     fun askPrice() = max(minAsk(), ask)
     fun bidPrice() = min(maxBid(), bid)
