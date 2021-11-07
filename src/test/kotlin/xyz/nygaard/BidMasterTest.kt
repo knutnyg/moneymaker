@@ -78,15 +78,15 @@ internal class BidMasterTest {
     }
 
     @Test
-    fun `move bid closer as spread has increased`() {
-        val tick = MarketTicker(bid = 513015.3, ask = 518469.83)
-        val activeBids = listOf(activeBid(510608.01))
+    fun `move bid closer`() {
+        val tick = MarketTicker(bid = 990.0, ask = 1000.0)
+        val activeBids = listOf(activeBid(850.0))
 
         val actions = BidMaster(activeBids, tick).execute()
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = tick.bidPrice(),
+            price = 988.0,
         )
 
         assertThat(actions).containsExactly(

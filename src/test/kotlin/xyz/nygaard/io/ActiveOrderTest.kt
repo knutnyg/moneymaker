@@ -2,6 +2,7 @@ package xyz.nygaard.io
 
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -45,6 +46,21 @@ internal class ActiveOrderTest {
     @Test
     fun `bid far below ticker bid`() {
         assertTrue(activeOrder(ActiveOrder.OrderType.bid, 600.0).outOfSync(MarketTicker(700.0, 1000.0)))
+    }
+
+    @Test
+    fun `bid far below ticker bid with low spread`() {
+        assertFalse(activeOrder(ActiveOrder.OrderType.bid, 529500.0).outOfSync(MarketTicker(535000.0, 536000.0))) // 0.5% spread
+    }
+
+    @Test
+    fun `ask far above ticker ask with low spread`() {
+        assertFalse(activeOrder(ActiveOrder.OrderType.ask, 542000.0).outOfSync(MarketTicker(535000.0, 536000.0))) // 0.5% spread
+    }
+
+    @Test
+    fun `bid far below low spread`() {
+        assertTrue(activeOrder(ActiveOrder.OrderType.bid, 850.0).outOfSync(MarketTicker(990.0, 1000.0)))
     }
 
     private fun activeOrder(type: ActiveOrder.OrderType, price: Double) =

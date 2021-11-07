@@ -39,9 +39,17 @@ data class ActiveOrder(
     }
 
     fun outOfSync(marketTicker: MarketTicker): Boolean {
-        return when (type) {
-            OrderType.bid -> this.price > marketTicker.bid || this.price < (marketTicker.bid * 0.99) // TODO: Må ta hensyn til spread
-            OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.01) // TODO: Må ta hensyn til spread
+        return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
+            // If spread is very low allow orders as long as they keep the minimum spread
+            when (type) {
+                OrderType.bid -> this.price > marketTicker.bid || (this.price < (marketTicker.ask * 0.985) || this.price > marketTicker.ask * 0.988)
+                OrderType.ask -> this.price < marketTicker.ask || (this.price < (marketTicker.bid * 1.012) ||  this.price > (marketTicker.bid * 1.015))
+            }
+        } else {
+            when (type) {
+                OrderType.bid -> this.price > marketTicker.bid || this.price < (marketTicker.bid * 0.99)
+                OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.01)
+            }
         }
     }
 }
@@ -72,7 +80,7 @@ data class MarketTicker(
     val priceStrategy: PriceStrategy = PriceStrategy()
 ) {
 
-    private fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
+    internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
     internal fun minAsk(): Double = priceStrategy.minAsk(bid)
     internal fun maxBid(): Double = priceStrategy.maxBid(ask)
