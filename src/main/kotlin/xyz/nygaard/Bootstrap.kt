@@ -10,7 +10,6 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
 import io.ktor.client.features.json.*
-import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.features.*
@@ -22,30 +21,22 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.broadcast
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
-import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
-import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
@@ -197,16 +188,36 @@ fun main() {
         },
     )
 
-    Timer("tick")
-        .scheduleAtFixedRate(ticker, 2000, 5000)
+    val timer = Timer("tick")
+    timer.scheduleAtFixedRate(ticker, 2000, 5000)
 
-    embeddedServer(Netty, port = 8020, host = "localhost") {
+    val server = embeddedServer(Netty, port = 8020, host = "localhost") {
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
             firiClient = firiClient,
             config = environment
         )
-    }.start(wait = true)
+    }.start()
+    Runtime.getRuntime().addShutdownHook(Thread {
+        log.info("cleanup active orders")
+        CoroutineScope(Dispatchers.IO).launch {
+            runBlocking {
+                firiClient.deleteActiveOrders()
+            }
+        }
+        log.info("cleanup active orders: STOPPED")
+    })
+    Runtime.getRuntime().addShutdownHook(Thread {
+        log.info("stop server")
+        server.stop(1, 5, TimeUnit.SECONDS)
+        log.info("stop server: STOPPED")
+    })
+    Runtime.getRuntime().addShutdownHook(Thread {
+        log.info("stop timer")
+        timer.cancel()
+        log.info("stop timer: STOPPED")
+    })
+    Thread.currentThread().join()
 }
 
 internal fun Application.buildApplication(
