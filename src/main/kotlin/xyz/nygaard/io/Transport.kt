@@ -26,7 +26,8 @@ data class ActiveOrder(
     val amount: Double,
     val matched: Double,
     val cancelled: Double,
-    val created_at: Instant
+    val created_at: Instant,
+    val priceStrategy: PriceStrategy = PriceStrategy()
 ) {
     enum class OrderType { bid, ask }
 
@@ -40,7 +41,7 @@ data class ActiveOrder(
     fun outOfSync(marketTicker: MarketTicker): Boolean {
         return when (type) {
             OrderType.bid -> this.price < (marketTicker.bid * 0.9995) // TODO: Må ta hensyn til spread
-            OrderType.ask -> this.price > (marketTicker.ask * 1.0001) // TODO: Må ta hensyn til spread
+            OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.0001) // TODO: Må ta hensyn til spread
         }
     }
 }
