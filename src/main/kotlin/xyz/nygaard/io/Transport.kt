@@ -51,6 +51,12 @@ class PriceStrategy(
     private val minAskSpread: Double = 1.012,
     private val minBidSpread: Double = 0.988
 ) {
+
+    init {
+        require(minBidSpread <= 1.00) { "require a maximum of 1.00 spread for our bids" }
+        require(minAskSpread >= 1.00) { "require a minimum of 1.00 spread for our asks" }
+    }
+
     internal fun minAsk(bid: Double): Double =
         (bid.toBigDecimal() * minAskSpread.toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
 
