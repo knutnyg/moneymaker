@@ -28,6 +28,11 @@ internal class ActiveOrderTest {
     }
 
     @Test
+    fun `ask far above ticker bid`() {
+        assertTrue(activeOrder(ActiveOrder.OrderType.ask, 1100.0).outOfSync(MarketTicker(700.0, 1000.0)))
+    }
+
+    @Test
     fun `bid just above ticker bid`() {
         assertTrue(activeOrder(ActiveOrder.OrderType.bid, 701.0).outOfSync(MarketTicker(700.0, 1000.0)))
     }
@@ -35,6 +40,11 @@ internal class ActiveOrderTest {
     @Test
     fun `bid just below ticker bid`() {
         assertFalse(activeOrder(ActiveOrder.OrderType.bid, 699.0).outOfSync(MarketTicker(700.0, 1000.0)))
+    }
+
+    @Test
+    fun `bid far below ticker bid`() {
+        assertTrue(activeOrder(ActiveOrder.OrderType.bid, 600.0).outOfSync(MarketTicker(700.0, 1000.0)))
     }
 
     private fun activeOrder(type: ActiveOrder.OrderType, price: Double) =
