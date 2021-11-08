@@ -21,10 +21,12 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -198,26 +200,28 @@ fun main() {
             config = environment
         )
     }.start()
-    Runtime.getRuntime().addShutdownHook(Thread {
-        log.info("cleanup active orders")
-        CoroutineScope(Dispatchers.IO).launch {
-            runBlocking {
-                firiClient.deleteActiveOrders()
-            }
-        }
-        log.info("cleanup active orders: STOPPED")
-    })
-    Runtime.getRuntime().addShutdownHook(Thread {
-        log.info("stop server")
-        server.stop(1, 5, TimeUnit.SECONDS)
-        log.info("stop server: STOPPED")
-    })
+
+    setupTearDownHook(timer, server, firiClient)
+}
+
+private fun setupTearDownHook(
+    timer: Timer,
+    server: NettyApplicationEngine,
+    firiClient: FiriClient
+) {
     Runtime.getRuntime().addShutdownHook(Thread {
         log.info("stop timer")
         timer.cancel()
         log.info("stop timer: STOPPED")
+
+        log.info("stop server")
+        server.stop(1, 5, TimeUnit.SECONDS)
+        log.info("stop server: STOPPED")
+
+        log.info("cleanup active orders")
+        runBlocking { firiClient.deleteActiveOrders() }
+        log.info("cleanup active orders: STOPPED")
     })
-    Thread.currentThread().join()
 }
 
 internal fun Application.buildApplication(
@@ -325,10 +329,12 @@ fun Route.registerSelftestApi(httpClient: HttpClient) {
         val state = AppState.get()
         val listeners = AppState.listenersCount()
 
-        call.respond(mapOf(
-            "state" to state,
-            "listeners" to listeners,
-        ))
+        call.respond(
+            mapOf(
+                "state" to state,
+                "listeners" to listeners,
+            )
+        )
     }
     get("/firi") {
         log.info("looking up markets")
