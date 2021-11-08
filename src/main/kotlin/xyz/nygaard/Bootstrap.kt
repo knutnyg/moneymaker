@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import net.logstash.logback.argument.StructuredArguments.f
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -78,12 +79,15 @@ data class AppState(
 
         fun listenersCount() = listeners.size
 
-        fun update(f: (AppState) -> AppState): AppState = appState.updateAndGet {
-            val next = f(it).copy(
-                lastUpdatedAt = Instant.now(),
-            )
+        fun update(f: (AppState) -> AppState): AppState {
+            val now = Instant.now()
+            val next = appState.updateAndGet {
+                f(it).copy(
+                    lastUpdatedAt = now,
+                )
+            }
             notify(next)
-            next
+            return next
         }
 
         fun get(): AppState {
@@ -207,7 +211,7 @@ fun main() {
 private fun setupTearDownHook(
     timer: Timer,
     server: NettyApplicationEngine,
-    firiClient: FiriClient
+    firiClient: FiriClient,
 ) {
     Runtime.getRuntime().addShutdownHook(Thread {
         log.info("stop timer")
