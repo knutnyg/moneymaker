@@ -3,8 +3,8 @@ package xyz.nygaard
 import kotlinx.coroutines.runBlocking
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType.ask
+import xyz.nygaard.io.CreateOrderRequest
 import xyz.nygaard.io.MarketTicker
-import kotlin.math.max
 
 class AskMaster(
     private val activeOrders: List<ActiveOrder>,

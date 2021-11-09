@@ -3,6 +3,7 @@ package xyz.nygaard
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.CreateOrderRequest
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
 import java.time.Instant
