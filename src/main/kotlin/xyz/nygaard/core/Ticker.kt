@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import xyz.nygaard.*
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.FiriClient
 import java.util.*
 import java.util.function.Consumer
 
