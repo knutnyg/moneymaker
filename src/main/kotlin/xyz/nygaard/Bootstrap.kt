@@ -27,13 +27,14 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import net.logstash.logback.argument.StructuredArguments.f
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.FiriClient
+import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
@@ -161,7 +162,7 @@ fun main() {
         }
     }
 
-    val firiClient = FiriClient(apiKey = environment.apiKey, httpclient = httpClient)
+    val firiClient = FiriClient(clientId = environment.clientId, clientSecret = environment.clientSecret, httpclient = httpClient)
 
     val active = runBlocking { firiClient.getActiveOrders() }
     AppState.update {

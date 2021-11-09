@@ -1,15 +1,14 @@
-package xyz.nygaard
+package xyz.nygaard.io
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import org.slf4j.MDC
-import xyz.nygaard.io.*
+import xyz.nygaard.log
+import xyz.nygaard.util.createSignature
 import java.math.BigDecimal
-import java.util.*
+import java.time.Instant
 
 
 data class CreateOrderRequest(
@@ -31,21 +30,13 @@ data class CurrencyBalance(
 enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 
 class FiriClient(
-    private val apiKey: String,
+    private val clientId: String,
+    private val clientSecret: String,
     private val baseUrl: String = "https://api.firi.com/v2",
-    httpclient: HttpClient
+    private val httpclient: HttpClient
 ) {
-    private val client: HttpClient
-    init {
-        client = httpclient.config {
-            defaultRequest {
-                header("miraiex-access-key", apiKey)
-            }
-        }
-    }
-
     suspend fun getBalance(): AccountBalance {
-        val res: HttpResponse = client.get("${baseUrl}/balances")
+        val res: HttpResponse = httpclient.signedGet("${baseUrl}/balances")
 
         return try {
             val currencies: List<CurrencyBalance> = res.receive()
@@ -57,7 +48,7 @@ class FiriClient(
     }
 
     suspend fun getActiveOrders(): List<ActiveOrder> {
-        val res: HttpResponse = client.get("${baseUrl}/orders/${Market.BTCNOK}")
+        val res: HttpResponse = httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}")
 
         return try {
             res.receive()
@@ -68,7 +59,7 @@ class FiriClient(
     }
 
     suspend fun deleteActiveOrders() {
-        val res: HttpResponse = client.delete("${baseUrl}/orders/${Market.BTCNOK}")
+        val res: HttpResponse = httpclient.signedDelete("${baseUrl}/orders/${Market.BTCNOK}")
         if (res.status.isSuccess()) {
             log.info("Deleted all open orders")
         } else {
@@ -77,7 +68,7 @@ class FiriClient(
     }
 
     suspend fun fetchMarketTicker(): MarketTicker {
-        val res: HttpResponse = client.get("${baseUrl}/markets/${Market.BTCNOK}/ticker")
+        val res: HttpResponse = httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker")
         return try {
             res.receive()
         } catch (e: Exception) {
@@ -92,7 +83,7 @@ class FiriClient(
         val price = req.price
         val amount = req.amount
         val type = req.type
-        val res: HttpResponse = client.post("${baseUrl}/orders") {
+        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders") {
             contentType(ContentType.Application.Json)
             this.body = OrderRequest(
                 market = req.market,
@@ -112,7 +103,7 @@ class FiriClient(
     suspend fun placeAsk(price: Double, amount: Double = 0.0001): OrderResponse {
         log.info("Placing ask for $amount BTCNOK @ $price")
 
-        val res: HttpResponse = client.post("${baseUrl}/orders") {
+        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders") {
             contentType(ContentType.Application.Json)
             this.body = OrderRequest(
                 type = "ask",
@@ -127,4 +118,23 @@ class FiriClient(
             throw RuntimeException(e)
         }
     }
+
+    private suspend fun HttpClient.signedGet(urlString: String): HttpResponse = signedRequest(HttpMethod.Get, urlString)
+    private suspend fun HttpClient.signedPost(urlString: String, block: HttpRequestBuilder.() -> Unit): HttpResponse = signedRequest(HttpMethod.Post, urlString, block)
+    private suspend fun HttpClient.signedDelete(urlString: String) = signedRequest(HttpMethod.Delete, urlString)
+
+    private suspend fun HttpClient.signedRequest(httpMethod: HttpMethod = HttpMethod.Get, urlString: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
+        val timestamp = "${Instant.now().toEpochMilli() / 1000}"
+        val validity = "2000"
+        return this.request(urlString) {
+            method = httpMethod
+            header("miraiex-user-clientid", clientId)
+            header("miraiex-user-signature", createSignature(clientSecret, timestamp, validity))
+            parameter("timestamp", timestamp)
+            parameter("validity", validity)
+            block()
+        }
+    }
+
+
 }
