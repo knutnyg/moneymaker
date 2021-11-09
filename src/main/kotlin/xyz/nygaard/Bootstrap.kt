@@ -162,7 +162,12 @@ fun main() {
         }
     }
 
-    val firiClient = FiriClient(clientId = environment.clientId, clientSecret = environment.clientSecret, httpclient = httpClient)
+    val firiClient = FiriClient(
+        clientId = environment.clientId,
+        clientSecret = environment.clientSecret,
+        clientApiKey = environment.apiKey,
+        httpclient = httpClient
+    )
 
     val active = runBlocking { firiClient.getActiveOrders() }
     AppState.update {

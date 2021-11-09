@@ -32,6 +32,7 @@ enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 class FiriClient(
     private val clientId: String,
     private val clientSecret: String,
+    private val clientApiKey: String,
     private val baseUrl: String = "https://api.firi.com/v2",
     private val httpclient: HttpClient
 ) {
@@ -120,16 +121,27 @@ class FiriClient(
     }
 
     private suspend fun HttpClient.signedGet(urlString: String): HttpResponse = signedRequest(HttpMethod.Get, urlString)
-    private suspend fun HttpClient.signedPost(urlString: String, block: HttpRequestBuilder.() -> Unit): HttpResponse = signedRequest(HttpMethod.Post, urlString, block)
+
+    // TODO: This should use signed request but that doesn't work for some reason...
+    private suspend fun HttpClient.signedPost(urlString: String, block: HttpRequestBuilder.() -> Unit): HttpResponse =
+        this.post(urlString) {
+            header("miraiex-access-key", clientApiKey)
+            block()
+        }
+
     private suspend fun HttpClient.signedDelete(urlString: String) = signedRequest(HttpMethod.Delete, urlString)
 
-    private suspend fun HttpClient.signedRequest(httpMethod: HttpMethod = HttpMethod.Get, urlString: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
-        val timestamp = "${Instant.now().toEpochMilli() / 1000}"
+    private suspend fun HttpClient.signedRequest(
+        httpMethod: HttpMethod,
+        urlString: String,
+        block: HttpRequestBuilder.() -> Unit = {}
+    ): HttpResponse {
+        val timestamp = Instant.now().toEpochMilli() / 1000
         val validity = "2000"
         return this.request(urlString) {
             method = httpMethod
             header("miraiex-user-clientid", clientId)
-            header("miraiex-user-signature", createSignature(clientSecret, timestamp, validity))
+            header("miraiex-user-signature", createSignature(clientSecret, timestamp.toString(), validity))
             parameter("timestamp", timestamp)
             parameter("validity", validity)
             block()
