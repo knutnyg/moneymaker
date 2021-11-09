@@ -85,29 +85,9 @@ class FiriClient(
         val amount = req.amount
         val type = req.type
         val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders") {
-            contentType(ContentType.Application.Json)
             this.body = OrderRequest(
                 market = req.market,
                 type = type.name.lowercase(),
-                price = price.toString(),
-                amount = amount.toString()
-            )
-        }
-        return try {
-            res.receive()
-        } catch (e: Exception) {
-            log.info("Failed to place order", e)
-            throw RuntimeException(e)
-        }
-    }
-
-    suspend fun placeAsk(price: Double, amount: Double = 0.0001): OrderResponse {
-        log.info("Placing ask for $amount BTCNOK @ $price")
-
-        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders") {
-            contentType(ContentType.Application.Json)
-            this.body = OrderRequest(
-                type = "ask",
                 price = price.toString(),
                 amount = amount.toString()
             )
@@ -126,6 +106,7 @@ class FiriClient(
     private suspend fun HttpClient.signedPost(urlString: String, block: HttpRequestBuilder.() -> Unit): HttpResponse =
         this.post(urlString) {
             header("miraiex-access-key", clientApiKey)
+            contentType(ContentType.Application.Json)
             block()
         }
 
