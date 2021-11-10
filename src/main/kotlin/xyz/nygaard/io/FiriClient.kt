@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import xyz.nygaard.log
+import xyz.nygaard.objectMapper
 import xyz.nygaard.util.createSignature
 import java.math.BigDecimal
 import java.time.Instant
@@ -84,13 +85,27 @@ class FiriClient(
         val price = req.price
         val amount = req.amount
         val type = req.type
-        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders") {
-            this.body = OrderRequest(
-                market = req.market,
-                type = type.name.lowercase(),
-                price = price.toString(),
-                amount = amount.toString()
+
+        val timestamp = Instant.now().toEpochMilli() / 1000
+        val validity = "2000"
+
+        val orderRequest = OrderRequest(
+            market = req.market,
+            type = type.name.lowercase(),
+            price = price.toString(),
+            amount = amount.toString()
+        )
+
+        val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
+            this.body = orderRequest
+            header("miraiex-user-clientid", clientId)
+            header(
+                "miraiex-user-signature",
+                createSignature(clientSecret, orderRequest.signablePayload(validity, timestamp.toString()))
             )
+            parameter("timestamp", timestamp)
+            parameter("validity", validity)
+
         }
         return try {
             res.receive()
@@ -119,15 +134,19 @@ class FiriClient(
     ): HttpResponse {
         val timestamp = Instant.now().toEpochMilli() / 1000
         val validity = "2000"
+        val stamp = Stamp(timestamp.toString(), validity)
         return this.request(urlString) {
             method = httpMethod
             header("miraiex-user-clientid", clientId)
-            header("miraiex-user-signature", createSignature(clientSecret, timestamp.toString(), validity))
+            header("miraiex-user-signature", createSignature(clientSecret, objectMapper.writeValueAsString(stamp)))
             parameter("timestamp", timestamp)
             parameter("validity", validity)
             block()
         }
     }
-
-
 }
+
+data class Stamp(
+    val timestamp: String,
+    val validity: String
+)

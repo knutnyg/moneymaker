@@ -1,5 +1,6 @@
 package xyz.nygaard.io
 
+import xyz.nygaard.objectMapper
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -11,7 +12,23 @@ data class OrderRequest(
     val type: String,
     val price: String,
     val amount: String
-)
+) {
+    fun signablePayload(validity: String, timestamp: String) =
+        objectMapper.writeValueAsString(
+            StampedOrderRequest(
+                market, type, price, amount, timestamp, validity
+            )
+        )
+
+    data class StampedOrderRequest(
+        val market: String = "BTCNOK",
+        val type: String,
+        val price: String,
+        val amount: String,
+        val timestamp: String,
+        val validity: String,
+    )
+}
 
 data class OrderResponse(
     val id: Int

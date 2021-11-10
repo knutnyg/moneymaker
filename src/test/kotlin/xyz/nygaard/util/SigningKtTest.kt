@@ -2,14 +2,10 @@ package xyz.nygaard.util
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import xyz.nygaard.io.Stamp
 import xyz.nygaard.objectMapper
 
 internal class SigningKtTest {
-
-    data class Stamp(
-        val timestamp: String,
-        val validity: String
-    )
 
     private val payload = objectMapper.writeValueAsString(Stamp("1000", "2000"))
 
