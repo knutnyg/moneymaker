@@ -1,6 +1,7 @@
 package xyz.nygaard
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -22,6 +23,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
@@ -31,75 +33,27 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
+import xyz.nygaard.core.AppState
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
-import xyz.nygaard.util.createSignature
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
-val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
 data class ActiveTradesState(
     val activeOrders: List<ActiveOrder>,
 )
 
-data class AppState(
-    val activeTrades: ActiveTradesState,
-    val prevActionSet: List<Action>,
-    val lastUpdatedAt: Instant,
-) {
-    companion object {
-        private val listeners: ConcurrentHashMap<ApplicationCall, (AppState) -> Unit> = ConcurrentHashMap()
-
-        private val appState: AtomicReference<AppState> = AtomicReference(
-            AppState(
-                activeTrades = ActiveTradesState(activeOrders = listOf()),
-                prevActionSet = listOf(),
-                lastUpdatedAt = Instant.now(),
-            )
-        )
-
-        internal fun notify(state: AppState) {
-            listeners.forEach { (_, u) -> u(state) }
-        }
-
-        fun listen(o: ApplicationCall, l: (AppState) -> Unit) {
-            listeners.putIfAbsent(o, l)
-        }
-
-        fun removeListener(o: ApplicationCall) {
-            listeners.remove(o)
-        }
-
-        fun listenersCount() = listeners.size
-
-        fun update(f: (AppState) -> AppState): AppState {
-            val now = Instant.now()
-            val next = appState.updateAndGet {
-                f(it).copy(
-                    lastUpdatedAt = now,
-                )
-            }
-            notify(next)
-            return next
-        }
-
-        fun get(): AppState {
-            return appState.get().copy()
-        }
-    }
-}
-
 fun getRequestId(): String = MDC.get("r-id") ?: generateRequestId()
 fun generateRequestId(): String = UUID.randomUUID().toString()
 
+@ExperimentalCoroutinesApi
 fun main() {
     val props = Properties()
 
@@ -206,7 +160,6 @@ fun main() {
         buildApplication(
             staticResourcesPath = environment.staticResourcesPath,
             firiClient = firiClient,
-            config = environment
         )
     }.start()
 
@@ -233,10 +186,10 @@ private fun setupTearDownHook(
     })
 }
 
+@ExperimentalCoroutinesApi
 internal fun Application.buildApplication(
     staticResourcesPath: String,
     firiClient: FiriClient,
-    config: Config,
     httpClient: HttpClient = HttpClient(CIO),
 ) {
     installContentNegotiation()
