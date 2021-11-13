@@ -98,6 +98,7 @@ class FiriClient(
 
         val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
             this.body = orderRequest
+            contentType(ContentType.Application.Json)
             header("miraiex-user-clientid", clientId)
             header(
                 "miraiex-user-signature",
