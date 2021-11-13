@@ -10,3 +10,5 @@ fun createSignature(key: String, payloadAsString: String): String {
     sha256Hmac.update(payloadAsString.toByteArray())
     return sha256Hmac.doFinal().toHex()
 }
+
+fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
