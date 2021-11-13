@@ -1,6 +1,7 @@
 package xyz.nygaard.io.requests
 
 import xyz.nygaard.objectMapper
+import xyz.nygaard.util.createSignature
 import java.time.Instant
 
 open class RequestBase(
@@ -8,5 +9,5 @@ open class RequestBase(
     val validity: String = "2000"
 ) {
     fun createSignature(clientSecret: String) =
-        xyz.nygaard.util.createSignature(clientSecret, objectMapper.writeValueAsString(this))
+        createSignature(clientSecret, objectMapper.writeValueAsString(this))
 }
