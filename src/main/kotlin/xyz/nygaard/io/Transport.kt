@@ -7,28 +7,12 @@ import java.time.Instant
 import kotlin.math.max
 import kotlin.math.min
 
-data class OrderRequest(
+class OrderRequest(
     val market: String = "BTCNOK",
     val type: String,
     val price: String,
     val amount: String
-) {
-    fun signablePayload(validity: String, timestamp: String) =
-        objectMapper.writeValueAsString(
-            StampedOrderRequest(
-                market, type, price, amount, timestamp, validity
-            )
-        )
-
-    data class StampedOrderRequest(
-        val market: String = "BTCNOK",
-        val type: String,
-        val price: String,
-        val amount: String,
-        val timestamp: String,
-        val validity: String,
-    )
-}
+): RequestBase()
 
 data class OrderResponse(
     val id: Int

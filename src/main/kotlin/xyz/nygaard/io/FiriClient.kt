@@ -16,8 +16,17 @@ data class CreateOrderRequest(
     val type: ActiveOrder.OrderType,
     val price: Double,
     val amount: Double = 0.0001,
-    val market: String = "BTCNOK",
-)
+    val market: String = "BTCNOK"
+) {
+    fun toRequest(): OrderRequest {
+        return OrderRequest(
+            market = market,
+            price = price.toString(),
+            amount = amount.toString(),
+            type = type.toString()
+        )
+    }
+}
 
 data class AccountBalance(val currencies: Map<Currency, CurrencyBalance>)
 
@@ -81,33 +90,7 @@ class FiriClient(
 
     suspend fun placeOrder(req: CreateOrderRequest): OrderResponse {
         log.info("${req.market}: placing ${req.type} for ${req.amount} @ ${req.price}")
-
-        val price = req.price
-        val amount = req.amount
-        val type = req.type
-
-        val timestamp = Instant.now().toEpochMilli() / 1000
-        val validity = "2000"
-
-        val orderRequest = OrderRequest(
-            market = req.market,
-            type = type.name.lowercase(),
-            price = price.toString(),
-            amount = amount.toString()
-        )
-
-        val res: HttpResponse = httpclient.post("${baseUrl}/orders") {
-            this.body = orderRequest
-            contentType(ContentType.Application.Json)
-            header("miraiex-user-clientid", clientId)
-            header(
-                "miraiex-user-signature",
-                createSignature(clientSecret, orderRequest.signablePayload(validity, timestamp.toString()))
-            )
-            parameter("timestamp", timestamp)
-            parameter("validity", validity)
-
-        }
+        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders", req.toRequest())
         return try {
             res.receive()
         } catch (e: Exception) {
@@ -118,12 +101,14 @@ class FiriClient(
 
     private suspend fun HttpClient.signedGet(urlString: String): HttpResponse = signedRequest(HttpMethod.Get, urlString)
 
-    // TODO: This should use signed request but that doesn't work for some reason...
-    private suspend fun HttpClient.signedPost(urlString: String, block: HttpRequestBuilder.() -> Unit): HttpResponse =
-        this.post(urlString) {
-            header("miraiex-access-key", clientApiKey)
-            contentType(ContentType.Application.Json)
-            block()
+    private suspend fun HttpClient.signedPost(
+        urlString: String,
+        payload: RequestBase,
+        contentType: ContentType = ContentType.Application.Json
+    ): HttpResponse =
+        signedRequest(HttpMethod.Post, urlString, payload = payload) {
+            contentType(contentType)
+            body = payload
         }
 
     private suspend fun HttpClient.signedDelete(urlString: String) = signedRequest(HttpMethod.Delete, urlString)
@@ -131,23 +116,23 @@ class FiriClient(
     private suspend fun HttpClient.signedRequest(
         httpMethod: HttpMethod,
         urlString: String,
+        payload: RequestBase = RequestBase(),
         block: HttpRequestBuilder.() -> Unit = {}
     ): HttpResponse {
-        val timestamp = Instant.now().toEpochMilli() / 1000
-        val validity = "2000"
-        val stamp = Stamp(timestamp.toString(), validity)
         return this.request(urlString) {
             method = httpMethod
             header("miraiex-user-clientid", clientId)
-            header("miraiex-user-signature", createSignature(clientSecret, objectMapper.writeValueAsString(stamp)))
-            parameter("timestamp", timestamp)
-            parameter("validity", validity)
+            header("miraiex-user-signature", payload.createSignature(clientSecret))
+            parameter("timestamp", payload.timestamp)
+            parameter("validity", payload.validity)
             block()
         }
     }
 }
 
-data class Stamp(
-    val timestamp: String,
-    val validity: String
-)
+open class RequestBase(
+    val timestamp: String = (Instant.now().toEpochMilli() / 1000).toString(),
+    val validity: String = "2000"
+) {
+    fun createSignature(clientSecret: String) = createSignature(clientSecret, objectMapper.writeValueAsString(this))
+}
