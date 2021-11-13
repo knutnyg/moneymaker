@@ -165,7 +165,6 @@ fun main() {
     val firiClient = FiriClient(
         clientId = environment.clientId,
         clientSecret = environment.clientSecret,
-        clientApiKey = environment.apiKey,
         httpclient = httpClient
     )
 

@@ -1,8 +1,11 @@
 package xyz.nygaard
 
 import kotlinx.coroutines.runBlocking
+import xyz.nygaard.core.AccountBalance
+import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.*
 import xyz.nygaard.io.ActiveOrder.OrderType
+import xyz.nygaard.io.responses.Currency
 
 class BalanceMaster(
     private val account: AccountBalance,

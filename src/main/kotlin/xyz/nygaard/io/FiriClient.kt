@@ -1,73 +1,39 @@
 package xyz.nygaard.io
 
+import CurrencyBalance
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import xyz.nygaard.core.AccountBalance
+import xyz.nygaard.core.CreateOrderRequest
+import xyz.nygaard.io.requests.RequestBase
+import xyz.nygaard.io.responses.Currency
 import xyz.nygaard.log
-import xyz.nygaard.objectMapper
-import xyz.nygaard.util.createSignature
-import java.math.BigDecimal
-import java.time.Instant
-
-
-data class CreateOrderRequest(
-    val type: ActiveOrder.OrderType,
-    val price: Double,
-    val amount: Double = 0.0001,
-    val market: String = "BTCNOK"
-) {
-    fun toRequest(): OrderRequest {
-        return OrderRequest(
-            market = market,
-            price = price.toString(),
-            amount = amount.toString(),
-            type = type.toString()
-        )
-    }
-}
-
-data class AccountBalance(val currencies: Map<Currency, CurrencyBalance>)
-
-data class CurrencyBalance(
-    val currency: String,
-    val balance: BigDecimal,
-    val hold: BigDecimal,
-    val available: BigDecimal,
-)
-
-enum class Currency { ADA, BTC, DAI, ETH, LTC, NOK, XRP, }
 
 class FiriClient(
     private val clientId: String,
     private val clientSecret: String,
-    private val clientApiKey: String,
     private val baseUrl: String = "https://api.firi.com/v2",
     private val httpclient: HttpClient
 ) {
-    suspend fun getBalance(): AccountBalance {
-        val res: HttpResponse = httpclient.signedGet("${baseUrl}/balances")
+    suspend fun getBalance(): AccountBalance = try {
+        val currencies: List<CurrencyBalance> = httpclient.signedGet("${baseUrl}/balances").receive()
+        AccountBalance(currencies = currencies.associateBy { Currency.valueOf(it.currency) })
+    } catch (e: Exception) {
+        log.info("Failed to fetch orders", e)
+        throw RuntimeException()
+    }
 
-        return try {
-            val currencies: List<CurrencyBalance> = res.receive()
-            AccountBalance(currencies = currencies.associateBy { Currency.valueOf(it.currency) })
+    suspend fun getActiveOrders(): List<ActiveOrder> =
+        try {
+            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}").receive()
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
             throw RuntimeException()
         }
-    }
 
-    suspend fun getActiveOrders(): List<ActiveOrder> {
-        val res: HttpResponse = httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}")
-
-        return try {
-            res.receive()
-        } catch (e: Exception) {
-            log.info("Failed to fetch orders", e)
-            throw RuntimeException()
-        }
-    }
 
     suspend fun deleteActiveOrders() {
         val res: HttpResponse = httpclient.signedDelete("${baseUrl}/orders/${Market.BTCNOK}")
@@ -78,21 +44,17 @@ class FiriClient(
         }
     }
 
-    suspend fun fetchMarketTicker(): MarketTicker {
-        val res: HttpResponse = httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker")
-        return try {
-            res.receive()
-        } catch (e: Exception) {
-            log.info("Failed to fetch market", e)
-            throw RuntimeException(e)
-        }
+    suspend fun fetchMarketTicker(): MarketTicker = try {
+        httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker").receive()
+    } catch (e: Exception) {
+        log.info("Failed to fetch market", e)
+        throw RuntimeException(e)
     }
 
     suspend fun placeOrder(req: CreateOrderRequest): OrderResponse {
         log.info("${req.market}: placing ${req.type} for ${req.amount} @ ${req.price}")
-        val res: HttpResponse = httpclient.signedPost("${baseUrl}/orders", req.toRequest())
         return try {
-            res.receive()
+            httpclient.signedPost("${baseUrl}/orders", req.toRequest()).receive()
         } catch (e: Exception) {
             log.info("Failed to place order", e)
             throw RuntimeException(e)
@@ -128,11 +90,4 @@ class FiriClient(
             block()
         }
     }
-}
-
-open class RequestBase(
-    val timestamp: String = (Instant.now().toEpochMilli() / 1000).toString(),
-    val validity: String = "2000"
-) {
-    fun createSignature(clientSecret: String) = createSignature(clientSecret, objectMapper.writeValueAsString(this))
 }

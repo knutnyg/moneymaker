@@ -1,6 +1,6 @@
 package xyz.nygaard
 
-import xyz.nygaard.io.CreateOrderRequest
+import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.FiriClient
 
 

@@ -3,7 +3,7 @@ package xyz.nygaard
 import kotlinx.coroutines.runBlocking
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType.ask
-import xyz.nygaard.io.CreateOrderRequest
+import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.MarketTicker
 
 class AskMaster(

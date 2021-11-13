@@ -1,18 +1,10 @@
 package xyz.nygaard.io
 
-import xyz.nygaard.objectMapper
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import kotlin.math.max
 import kotlin.math.min
-
-class OrderRequest(
-    val market: String = "BTCNOK",
-    val type: String,
-    val price: String,
-    val amount: String
-): RequestBase()
 
 data class OrderResponse(
     val id: Int

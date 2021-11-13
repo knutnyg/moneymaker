@@ -2,7 +2,7 @@ package xyz.nygaard.util
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import xyz.nygaard.io.RequestBase
+import xyz.nygaard.io.requests.RequestBase
 import xyz.nygaard.objectMapper
 
 internal class SigningKtTest {
