@@ -3,6 +3,7 @@ package xyz.nygaard.io
 import CurrencyBalance
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -11,19 +12,20 @@ import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.requests.RequestBase
 import xyz.nygaard.io.responses.Currency
 import xyz.nygaard.log
+import java.security.Key
 
 class FiriClient(
     private val clientId: String,
-    private val clientSecret: String,
     private val baseUrl: String = "https://api.firi.com/v2",
+    private val clientSecret: Key,
     private val httpclient: HttpClient
 ) {
     suspend fun getBalance(): AccountBalance = try {
         val currencies: List<CurrencyBalance> = httpclient.signedGet("${baseUrl}/balances").receive()
         AccountBalance(currencies = currencies.associateBy { Currency.valueOf(it.currency) })
     } catch (e: Exception) {
-        log.info("Failed to fetch orders", e)
-        throw RuntimeException()
+        log.info("Failed to fetch balance", e)
+        throw RuntimeException("Failed to fetch balance", e)
     }
 
     suspend fun getActiveOrders(): List<ActiveOrder> =
@@ -31,7 +33,7 @@ class FiriClient(
             httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}").receive()
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
-            throw RuntimeException()
+            throw RuntimeException("Failed to fetch orders", e)
         }
 
 
@@ -84,7 +86,7 @@ class FiriClient(
         return this.request(urlString) {
             method = httpMethod
             header("miraiex-user-clientid", clientId)
-            header("miraiex-user-signature", payload.createSignature(clientSecret))
+            header("miraiex-user-signature", payload.signWith(clientSecret))
             parameter("timestamp", payload.timestamp)
             parameter("validity", payload.validity)
             block()

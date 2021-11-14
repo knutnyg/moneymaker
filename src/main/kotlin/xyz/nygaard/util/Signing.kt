@@ -1,14 +1,17 @@
 package xyz.nygaard.util
 
+import java.security.Key
+import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-fun createSignature(key: String, payloadAsString: String): String {
-    val sha256Hmac = Mac.getInstance("HmacSHA256")
-    val secretKey = SecretKeySpec(key.toByteArray(), "HmacSHA256")
-    sha256Hmac.init(secretKey)
-    sha256Hmac.update(payloadAsString.toByteArray())
-    return sha256Hmac.doFinal().toHex()
-}
+private val hmacSha256 = "HmacSHA256"
 
-fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
+fun createKey(secret: String): Key = SecretKeySpec(secret.toByteArray(), hmacSha256)
+fun createSignature(secretKey: Key, data: ByteArray): String {
+    val mac = Mac.getInstance(hmacSha256)
+    mac.init(secretKey)
+    mac.update(data)
+    val digest = mac.doFinal()
+    return HexFormat.of().formatHex(digest)
+}

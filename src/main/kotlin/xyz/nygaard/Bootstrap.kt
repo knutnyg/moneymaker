@@ -37,14 +37,20 @@ import xyz.nygaard.core.AppState
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
+import xyz.nygaard.util.createKey
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.crypto.spec.SecretKeySpec
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
-val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+
+private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+
+fun <T> toJson(value: T): String = objectMapper.writeValueAsString(value)
+fun <T> toJsonBytes(value: T): ByteArray = objectMapper.writeValueAsBytes(value)
 
 data class ActiveTradesState(
     val activeOrders: List<ActiveOrder>,
@@ -116,9 +122,11 @@ fun main() {
         }
     }
 
+    val secretKey = createKey(environment.clientSecret)
+
     val firiClient = FiriClient(
         clientId = environment.clientId,
-        clientSecret = environment.clientSecret,
+        clientSecret = secretKey,
         httpclient = httpClient
     )
 
@@ -248,7 +256,7 @@ internal fun Application.buildApplication(
                             val state: AppState = it
                             withContext(Dispatchers.IO) {
                                 log.info("push state for {}", call.request.origin.remoteHost)
-                                val data = objectMapper.writeValueAsString(state)
+                                val data = toJson(state)
                                 write("data: ${data}\n\n")
                                 flush()
                             }

@@ -1,13 +1,16 @@
 package xyz.nygaard.io.requests
 
-import xyz.nygaard.objectMapper
+import xyz.nygaard.toJsonBytes
 import xyz.nygaard.util.createSignature
+import java.security.Key
 import java.time.Instant
 
-open class RequestBase(
-    val timestamp: String = (Instant.now().toEpochMilli() / 1000).toString(),
-    val validity: String = "2000"
+open class RequestBase private constructor(
+    val timestamp: String,
+    val validity: String,
 ) {
-    fun createSignature(clientSecret: String) =
-        createSignature(clientSecret, objectMapper.writeValueAsString(this))
+    constructor(ts: Instant = Instant.now(), validity: String = "2000") : this(ts.epochSecond.toString(), validity)
+
+    fun signWith(clientSecret: Key) =
+        createSignature(clientSecret, toJsonBytes(this))
 }
