@@ -18,12 +18,7 @@ class AskMaster(
 
         if (activeAsks.isEmpty()) {
             log.info("No active asks found")
-            val req = CreateOrderRequest(
-                type = ask,
-                price = priceStrategy.askPrice(marketTicker),
-                amount = 0.0001,
-            )
-            actions.add(AddAsk(req = req))
+            actions.add(AddAsk(req = priceStrategy.createAsk(marketTicker)))
             return@runBlocking actions
         }
 
@@ -33,13 +28,7 @@ class AskMaster(
         } else {
             log.info("We have an ask we need to move")
             actions.add(ClearOrders)
-
-            val req = CreateOrderRequest(
-                type = ask,
-                price = priceStrategy.askPrice(marketTicker),
-                amount = 0.0001,
-            )
-            actions.add(AddAsk(req = req))
+            actions.add(AddAsk(req = priceStrategy.createAsk(marketTicker)))
         }
         actions
     }

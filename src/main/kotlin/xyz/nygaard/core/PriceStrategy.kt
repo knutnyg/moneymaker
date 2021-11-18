@@ -27,6 +27,12 @@ class PriceStrategy(
 
     fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
 
+    fun createAsk(marketTicker: MarketTicker) = CreateOrderRequest(
+        type = ActiveOrder.OrderType.ask,
+        price = askPrice(marketTicker),
+        amount = 0.0001,
+    )
+
     internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
         return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
             // If spread is very low allow orders as long as they keep the minimum spread
@@ -44,7 +50,7 @@ class PriceStrategy(
     }
 
     fun allValid(activeOrders: List<ActiveOrder>, marketTicker: MarketTicker): Boolean {
-        return activeOrders.all { isValid(it, marketTicker)} && activeOrders.none {
+        return activeOrders.all { isValid(it, marketTicker) } && activeOrders.none {
             outOfSync(it, marketTicker)
         }
     }
