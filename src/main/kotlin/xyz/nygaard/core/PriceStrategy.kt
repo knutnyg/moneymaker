@@ -14,7 +14,9 @@ class PriceStrategy(
 
     init {
         require(minBidSpread <= 1.00) { "require a maximum of 1.00 spread for our bids" }
+        require(maxBidDrift <= 1.00) { "require a maximum of 1.00 for our bid drift" }
         require(minAskSpread >= 1.00) { "require a minimum of 1.00 spread for our asks" }
+        require(maxAskDrift >= 1.00) { "require a minimum of 1.00 for our ask drift" }
     }
 
     internal fun minAsk(bid: Double): Double =
