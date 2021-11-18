@@ -8,7 +8,7 @@ import java.time.Instant
 
 internal class ActiveOrderTest {
 
-    val priceStrategy = PriceStrategy(
+    private val priceStrategy = PriceStrategy(
         maxAskDrift = 1.003,
         maxBidDrift = 0.997
     )
