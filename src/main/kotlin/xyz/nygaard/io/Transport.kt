@@ -23,12 +23,8 @@ data class ActiveOrder(
 ) {
     enum class OrderType { bid, ask }
 
-    fun valid(marketTicker: MarketTicker): Boolean {
-        return when (type) {
-            OrderType.bid -> this.price <= marketTicker.maxBid()
-            OrderType.ask -> this.price >= marketTicker.minAsk()
-        }
-    }
+    @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.isValid(this, marketTicker)"), )
+    fun valid(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()): Boolean = priceStrategy.isValid(this, marketTicker)
 
     @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.outOfSync(this, marketTicker)"))
     fun outOfSync(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()) = priceStrategy.outOfSync(this, marketTicker)
@@ -45,7 +41,6 @@ data class MarketTicker(
 
     internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
-    internal fun minAsk(): Double = priceStrategy.minAsk(bid)
     internal fun maxBid(): Double = priceStrategy.maxBid(ask)
 
     fun bidPrice() = min(maxBid(), bid)
