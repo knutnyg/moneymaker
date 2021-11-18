@@ -6,8 +6,9 @@ import java.math.RoundingMode
 import kotlin.math.max
 
 class PriceStrategy(
-    private val minAskSpread: Double = 1.012,
-    private val minBidSpread: Double = 0.988,
+    private val minSpread: Double = 0.013,
+    private val minAskSpread: Double = 1.0 + minSpread,
+    private val minBidSpread: Double = 1.0 - minSpread,
     private val maxBidDrift: Double = 0.999997,
     private val maxAskDrift: Double = 1.000003
 ) {
@@ -34,7 +35,7 @@ class PriceStrategy(
     )
 
     internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
-        return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
+        return if (marketTicker.spreadAsPercentage().toDouble() < (1.0 + minSpread)) {
             // If spread is very low allow orders as long as they keep the minimum spread
             when (activeOrder.type) {
                 ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || (activeOrder.price !in (marketTicker.ask * 0.985..marketTicker.ask * 0.988))

@@ -14,6 +14,6 @@ internal class MarketTickerTest {
     @Test
     fun `bid price low spread`() {
         val ticker = MarketTicker(100.0, 101.0)
-        assertEquals(99.79, ticker.bidPrice())
+        assertEquals(99.69, ticker.bidPrice())
     }
 }
