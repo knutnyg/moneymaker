@@ -7,7 +7,9 @@ import kotlin.math.max
 
 class PriceStrategy(
     private val minAskSpread: Double = 1.012,
-    private val minBidSpread: Double = 0.988
+    private val minBidSpread: Double = 0.988,
+    private val maxBidDrift: Double = 0.999997,
+    private val maxAskDrift: Double = 1.000003
 ) {
 
     init {
@@ -33,8 +35,8 @@ class PriceStrategy(
         } else {
             // If spread larger always follow bid/ask
             when (activeOrder.type) {
-                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || activeOrder.price < (marketTicker.bid * 0.997)
-                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || activeOrder.price > (marketTicker.ask * 1.003)
+                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || activeOrder.price < (marketTicker.bid * maxBidDrift)
+                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || activeOrder.price > (marketTicker.ask * maxAskDrift)
             }
         }
     }
