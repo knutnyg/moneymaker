@@ -32,18 +32,7 @@ data class ActiveOrder(
     }
 
     fun outOfSync(marketTicker: MarketTicker): Boolean {
-        return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
-            // If spread is very low allow orders as long as they keep the minimum spread
-            when (type) {
-                OrderType.bid -> this.price > marketTicker.bid || (this.price < (marketTicker.ask * 0.985) || this.price > marketTicker.ask * 0.988)
-                OrderType.ask -> this.price < marketTicker.ask || (this.price < (marketTicker.bid * 1.012) ||  this.price > (marketTicker.bid * 1.015))
-            }
-        } else {
-            when (type) {
-                OrderType.bid -> this.price > marketTicker.bid || this.price < (marketTicker.bid * 0.997)
-                OrderType.ask -> this.price < marketTicker.ask || this.price > (marketTicker.ask * 1.003)
-            }
-        }
+        return priceStrategy.outOfSync(this, marketTicker)
     }
 }
 
@@ -64,6 +53,22 @@ class PriceStrategy(
 
     internal fun maxBid(ask: Double): Double =
         (ask.toBigDecimal() * (minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
+
+    internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
+        return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
+            // If spread is very low allow orders as long as they keep the minimum spread
+            when (activeOrder.type) {
+                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || (activeOrder.price < (marketTicker.ask * 0.985) || activeOrder.price > marketTicker.ask * 0.988)
+                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || (activeOrder.price < (marketTicker.bid * 1.012) ||  activeOrder.price > (marketTicker.bid * 1.015))
+            }
+        } else {
+            // If spread larger always follow bid/ask
+            when (activeOrder.type) {
+                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || activeOrder.price < (marketTicker.bid * 0.997)
+                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || activeOrder.price > (marketTicker.ask * 1.003)
+            }
+        }
+    }
 }
 
 data class MarketTicker(
