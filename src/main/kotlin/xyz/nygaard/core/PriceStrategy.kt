@@ -37,9 +37,11 @@ class PriceStrategy(
     internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
         return if (marketTicker.spreadAsPercentage().toDouble() < (1.0 + minSpread)) {
             // If spread is very low allow orders as long as they keep the minimum spread
+            val validBidRange = (marketTicker.ask * (minBidSpread - 0.003)..marketTicker.ask * minBidSpread)
+            val validAskRange = (marketTicker.bid * minAskSpread..marketTicker.bid * (minAskSpread + 0.003))
             when (activeOrder.type) {
-                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || (activeOrder.price !in (marketTicker.ask * 0.985..marketTicker.ask * 0.988))
-                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || (activeOrder.price !in (marketTicker.bid * 1.012..marketTicker.bid * 1.015))
+                ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || (activeOrder.price !in validBidRange)
+                ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || (activeOrder.price !in validAskRange)
             }
         } else {
             // If spread larger always follow bid/ask

@@ -66,7 +66,7 @@ internal class ActiveOrderTest {
     @Test
     fun `bid far below ticker bid with low spread`() {
         assertFalse(
-            activeOrder(ActiveOrder.OrderType.bid, 529500.0).outOfSync(
+            activeOrder(ActiveOrder.OrderType.bid, 529000.0).outOfSync(
                 MarketTicker(
                     535000.0,
                     536000.0
