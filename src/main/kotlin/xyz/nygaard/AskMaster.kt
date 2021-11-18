@@ -5,7 +5,7 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.MarketTicker
-import xyz.nygaard.io.PriceStrategy
+import xyz.nygaard.core.PriceStrategy
 
 class AskMaster(
     private val activeOrders: List<ActiveOrder>,

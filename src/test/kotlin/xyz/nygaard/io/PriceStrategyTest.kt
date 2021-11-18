@@ -3,6 +3,7 @@ package xyz.nygaard.io
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import xyz.nygaard.core.PriceStrategy
 
 internal class PriceStrategyTest {
 
