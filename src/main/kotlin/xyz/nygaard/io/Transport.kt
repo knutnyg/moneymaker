@@ -19,8 +19,7 @@ data class ActiveOrder(
     val amount: Double,
     val matched: Double,
     val cancelled: Double,
-    val created_at: Instant,
-    val priceStrategy: PriceStrategy = PriceStrategy()
+    val created_at: Instant
 ) {
     enum class OrderType { bid, ask }
 
@@ -31,9 +30,8 @@ data class ActiveOrder(
         }
     }
 
-    fun outOfSync(marketTicker: MarketTicker): Boolean {
-        return priceStrategy.outOfSync(this, marketTicker)
-    }
+    @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.outOfSync(this, marketTicker)"))
+    fun outOfSync(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()) = priceStrategy.outOfSync(this, marketTicker)
 }
 
 enum class Market { BTCNOK }
@@ -54,6 +52,8 @@ class PriceStrategy(
     internal fun maxBid(ask: Double): Double =
         (ask.toBigDecimal() * (minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
 
+    fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
+
     internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
         return if (marketTicker.spreadAsPercentage().toDouble() < 1.012) {
             // If spread is very low allow orders as long as they keep the minimum spread
@@ -67,6 +67,19 @@ class PriceStrategy(
                 ActiveOrder.OrderType.bid -> activeOrder.price > marketTicker.bid || activeOrder.price < (marketTicker.bid * 0.997)
                 ActiveOrder.OrderType.ask -> activeOrder.price < marketTicker.ask || activeOrder.price > (marketTicker.ask * 1.003)
             }
+        }
+    }
+
+    fun allValid(activeOrders: List<ActiveOrder>, marketTicker: MarketTicker): Boolean {
+        return activeOrders.all { isValid(it, marketTicker)} && activeOrders.none {
+            outOfSync(it, marketTicker)
+        }
+    }
+
+    fun isValid(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
+        return when (activeOrder.type) {
+            ActiveOrder.OrderType.bid -> activeOrder.price <= maxBid(marketTicker.ask)
+            ActiveOrder.OrderType.ask -> activeOrder.price >= minAsk(marketTicker.bid)
         }
     }
 }
@@ -83,7 +96,6 @@ data class MarketTicker(
     internal fun minAsk(): Double = priceStrategy.minAsk(bid)
     internal fun maxBid(): Double = priceStrategy.maxBid(ask)
 
-    fun askPrice() = max(minAsk(), ask)
     fun bidPrice() = min(maxBid(), bid)
 
     override fun toString(): String {

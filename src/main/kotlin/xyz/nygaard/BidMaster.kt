@@ -3,8 +3,10 @@ package xyz.nygaard
 import kotlinx.coroutines.runBlocking
 import xyz.nygaard.core.AccountBalance
 import xyz.nygaard.core.CreateOrderRequest
-import xyz.nygaard.io.*
+import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType
+import xyz.nygaard.io.MarketTicker
+import xyz.nygaard.io.PriceStrategy
 import xyz.nygaard.io.responses.Currency
 
 class BalanceMaster(
@@ -13,7 +15,7 @@ class BalanceMaster(
 ) {
     fun execute(): List<Action> {
         val btc = account.currencies[Currency.BTC]
-        
+
         return listOf()
     }
 }
@@ -21,6 +23,7 @@ class BalanceMaster(
 class BidMaster(
     private val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker,
+    private val priceStrategy: PriceStrategy = PriceStrategy(),
 ) {
     fun execute(): List<Action> = runBlocking {
         val actions = mutableSetOf<Action>()
@@ -32,7 +35,7 @@ class BidMaster(
         }
 
         if (activeBids.hasValidOrders(marketTicker)) {
-            if (activeBids.hasAnyOutOfSyncBids(marketTicker)) {
+            if (activeBids.hasAnyOutOfSyncBids(marketTicker, priceStrategy)) {
                 log.info("We have a valid bid that is out of sync")
                 actions.add(ClearOrders)
 
@@ -59,5 +62,7 @@ class BidMaster(
 }
 
 fun List<ActiveOrder>.hasValidOrders(marketTicker: MarketTicker) = this.any { it.valid(marketTicker) }
-fun List<ActiveOrder>.hasAnyOutOfSyncBids(marketTicker: MarketTicker) = this.any { it.outOfSync(marketTicker) }
+fun List<ActiveOrder>.hasAnyOutOfSyncBids(marketTicker: MarketTicker, priceStrategy: PriceStrategy) =
+    this.any { priceStrategy.outOfSync(it, marketTicker) }
+
 fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }

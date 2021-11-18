@@ -7,6 +7,7 @@ import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
+import xyz.nygaard.io.PriceStrategy
 import java.time.Instant
 
 internal class AskMasterTest {
@@ -18,7 +19,7 @@ internal class AskMasterTest {
 
         val req = CreateOrderRequest(
             ask,
-            price = tick.askPrice(),
+            price = PriceStrategy().askPrice(tick),
             amount = 0.0001,
         )
 

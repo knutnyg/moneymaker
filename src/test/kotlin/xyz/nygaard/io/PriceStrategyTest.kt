@@ -23,4 +23,16 @@ internal class PriceStrategyTest {
         assertThrows<IllegalArgumentException> { PriceStrategy(minAskSpread = 0.78) }
         assertThrows<IllegalArgumentException> { PriceStrategy(minBidSpread = 1.20) }
     }
+
+    @Test
+    fun `ask price high spread`() {
+        val ticker = MarketTicker(100.0, 200.0)
+        assertEquals(200.0, priceStrategy.askPrice(ticker))
+    }
+
+    @Test
+    fun `ask price low spread`() {
+        val ticker = MarketTicker(100.0, 101.0)
+        assertEquals(150.0, priceStrategy.askPrice(ticker))
+    }
 }
