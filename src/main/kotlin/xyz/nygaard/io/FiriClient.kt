@@ -3,10 +3,10 @@ package xyz.nygaard.io
 import CurrencyBalance
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.utils.io.errors.*
 import xyz.nygaard.core.AccountBalance
 import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.requests.RequestBase
@@ -33,7 +33,7 @@ class FiriClient(
             httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}").receive()
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
-            throw RuntimeException("Failed to fetch orders", e)
+            throw IOException("Failed to fetch orders", e)
         }
 
 
@@ -49,8 +49,8 @@ class FiriClient(
     suspend fun fetchMarketTicker(): MarketTicker = try {
         httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker").receive()
     } catch (e: Exception) {
-        log.info("Failed to fetch market", e)
-        throw RuntimeException(e)
+        log.error("Failed to fetch market", e)
+        throw IOException(e)
     }
 
     suspend fun placeOrder(req: CreateOrderRequest): OrderResponse {
@@ -59,7 +59,7 @@ class FiriClient(
             httpclient.signedPost("${baseUrl}/orders", req.toRequest()).receive()
         } catch (e: Exception) {
             log.info("Failed to place order", e)
-            throw RuntimeException(e)
+            throw IOException(e)
         }
     }
 
