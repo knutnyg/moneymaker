@@ -26,43 +26,23 @@ class BidMaster(
     private val priceStrategy: PriceStrategy = PriceStrategy(),
 ) {
     fun execute(): List<Action> = runBlocking {
-        val actions = mutableSetOf<Action>()
+        val actions = mutableListOf<Action>()
         val activeBids = activeOrders.filter { it.type == OrderType.bid }
 
-        if (activeBids.hasInvalidOrders(marketTicker)) {
-            log.info("Found active bids over threshold: ${marketTicker.maxBid()}")
-            actions.add(ClearOrders)
+        if (activeBids.isEmpty()) {
+            log.info("No active bids found")
+            actions.add(AddBid(req = priceStrategy.createBid(marketTicker)))
+            return@runBlocking actions
         }
 
-        if (activeBids.hasValidOrders(marketTicker)) {
-            if (activeBids.hasAnyOutOfSyncBids(marketTicker, priceStrategy)) {
-                log.info("We have a valid bid that is out of sync")
-                actions.add(ClearOrders)
-
-                val req = CreateOrderRequest(
-                    type = OrderType.bid,
-                    amount = 0.0001,
-                    price = marketTicker.bidPrice(),
-                )
-                actions.add(AddBid(req = req))
-            } else {
-                log.info("Keeping bid@${activeBids.first().price}")
-                actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
-            }
+        if(priceStrategy.allValid(activeBids, marketTicker)) {
+            log.info("Keeping bid@${activeBids.first().price}")
+            actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
         } else {
-            val req = CreateOrderRequest(
-                type = OrderType.bid,
-                amount = 0.0001,
-                price = marketTicker.bidPrice(),
-            )
-            actions.add(AddBid(req = req))
+            log.info("We have an ask we need to move")
+            actions.add(ClearOrders)
+            actions.add(AddBid(req = priceStrategy.createBid(marketTicker)))
         }
-        actions.toList()
+        actions
     }
 }
-
-fun List<ActiveOrder>.hasValidOrders(marketTicker: MarketTicker) = this.any { it.valid(marketTicker) }
-fun List<ActiveOrder>.hasAnyOutOfSyncBids(marketTicker: MarketTicker, priceStrategy: PriceStrategy) =
-    this.any { priceStrategy.outOfSync(it, marketTicker) }
-
-fun List<ActiveOrder>.hasInvalidOrders(marketTicker: MarketTicker) = this.any { !it.valid(marketTicker) }

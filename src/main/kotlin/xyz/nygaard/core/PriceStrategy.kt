@@ -4,6 +4,7 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.MarketTicker
 import java.math.RoundingMode
 import kotlin.math.max
+import kotlin.math.min
 
 class PriceStrategy(
     private val minSpread: Double = 0.013,
@@ -27,10 +28,17 @@ class PriceStrategy(
         (ask.toBigDecimal() * (minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
 
     fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
+    fun bidPrice(marketTicker: MarketTicker) = min(maxBid(marketTicker.ask), marketTicker.bid)
 
     fun createAsk(marketTicker: MarketTicker) = CreateOrderRequest(
         type = ActiveOrder.OrderType.ask,
         price = askPrice(marketTicker),
+        amount = 0.0001,
+    )
+
+    fun createBid(marketTicker: MarketTicker) = CreateOrderRequest(
+        type = ActiveOrder.OrderType.bid,
+        price = bidPrice(marketTicker),
         amount = 0.0001,
     )
 
