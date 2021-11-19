@@ -43,7 +43,7 @@ class PriceStrategy(
     )
 
     internal fun outOfSync(activeOrder: ActiveOrder, marketTicker: MarketTicker): Boolean {
-        return if (marketTicker.spreadAsPercentage().toDouble() < (1.0 + minSpread)) {
+        return if (marketTicker.spreadAsPercentage().toDouble() < (1.01 + minSpread*10)) {
             // If spread is very low allow orders as long as they keep the minimum spread
             val validBidRange = (marketTicker.ask * (minBidSpread - 0.003)..marketTicker.ask * minBidSpread + 0.001)
             val validAskRange = (marketTicker.bid * (minAskSpread - 0.001)..marketTicker.bid * (minAskSpread + 0.003))
