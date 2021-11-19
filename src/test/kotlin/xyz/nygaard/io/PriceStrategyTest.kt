@@ -36,4 +36,16 @@ internal class PriceStrategyTest {
         val ticker = MarketTicker(100.0, 101.0)
         assertEquals(150.0, priceStrategy.askPrice(ticker))
     }
+
+    @Test
+    fun `bid price high spread`() {
+        val ticker = MarketTicker(100.0, 200.0)
+        assertEquals(100.0, priceStrategy.bidPrice(ticker))
+    }
+
+    @Test
+    fun `bid price low spread`() {
+        val ticker = MarketTicker(100.0, 101.0)
+        assertEquals(75.75, priceStrategy.bidPrice(ticker))
+    }
 }

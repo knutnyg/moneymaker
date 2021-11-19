@@ -41,10 +41,6 @@ data class MarketTicker(
 
     internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
-    internal fun maxBid(): Double = priceStrategy.maxBid(ask)
-
-    fun bidPrice() = min(maxBid(), bid)
-
     override fun toString(): String {
         return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
     }
