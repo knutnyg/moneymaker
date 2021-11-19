@@ -39,7 +39,7 @@ class BidMaster(
             log.info("Keeping bid@${activeBids.first().price}")
             actions.add(KeepBid(CreateOrderRequest(OrderType.bid, activeBids.first().price)))
         } else {
-            log.info("We have an ask we need to move")
+            log.info("We have an bid we need to move")
             actions.add(ClearOrders)
             actions.add(AddBid(req = priceStrategy.createBid(marketTicker)))
         }
