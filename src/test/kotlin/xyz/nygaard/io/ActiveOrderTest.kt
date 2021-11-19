@@ -131,7 +131,6 @@ internal class ActiveOrderTest {
             )
         )
     }
-
-    private fun activeOrder(type: ActiveOrder.OrderType, price: Double) =
-        ActiveOrder(1, Market.BTCNOK, type, price, 1.0, 1.0, 1.0, 0.0, Instant.now())
 }
+fun activeOrder(type: ActiveOrder.OrderType, price: Double) =
+    ActiveOrder(1, Market.BTCNOK, type, price, 1.0, 1.0, 1.0, 0.0, Instant.now())

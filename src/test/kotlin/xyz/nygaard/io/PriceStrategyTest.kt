@@ -48,4 +48,11 @@ internal class PriceStrategyTest {
         val ticker = MarketTicker(100.0, 101.0)
         assertEquals(75.75, priceStrategy.bidPrice(ticker))
     }
+
+    @Test
+    fun `created ask is not outOfSync`(){
+        val master = PriceStrategy(minSpread = 0.013)
+        val ticker = MarketTicker(521780.1, 525920.46)
+        assertFalse(master.outOfSync(activeOrder(ActiveOrder.OrderType.ask, 528563.24), ticker))
+    }
 }
