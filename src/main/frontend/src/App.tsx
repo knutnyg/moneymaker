@@ -49,11 +49,12 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
                     }}
                 >
                     {state.activeTrades.activeOrders.map(a => <Fragment>
                         <div>{format(a.created_at)}</div>
+                        <div>{a.type}</div>
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
                         <div>{a.price}</div>
@@ -66,11 +67,12 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
                     }}
                 >
                     {state.filledOrders.filledOrders.map(a => <Fragment>
                         <div>{format(a.created_at)}</div>
+                        <div>{a.type}</div>
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
                         <div>{a.price}</div>
