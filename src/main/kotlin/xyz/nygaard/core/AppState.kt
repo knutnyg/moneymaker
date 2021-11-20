@@ -2,13 +2,24 @@ package xyz.nygaard.core
 
 import io.ktor.application.*
 import xyz.nygaard.Action
-import xyz.nygaard.ActiveTradesState
+import xyz.nygaard.io.ActiveOrder
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
+data class ActiveTradesState(
+    val lastUpdatedAt: Instant,
+    val activeOrders: List<ActiveOrder>,
+)
+
+data class FilledOrdersState(
+    val lastUpdatedAt: Instant,
+    val filledOrders: List<ActiveOrder>,
+)
+
 data class AppState(
     val activeTrades: ActiveTradesState,
+    val filledOrders: FilledOrdersState,
     val prevActionSet: List<Action>,
     val lastUpdatedAt: Instant,
 ) {
@@ -17,7 +28,11 @@ data class AppState(
 
         private val appState: AtomicReference<AppState> = AtomicReference(
             AppState(
-                activeTrades = ActiveTradesState(activeOrders = listOf()),
+                activeTrades = ActiveTradesState(activeOrders = listOf(), lastUpdatedAt = Instant.now()),
+                filledOrders = FilledOrdersState(
+                    filledOrders = listOf(),
+                    lastUpdatedAt = Instant.now(),
+                ),
                 prevActionSet = listOf(),
                 lastUpdatedAt = Instant.now(),
             )

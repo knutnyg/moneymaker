@@ -15,10 +15,17 @@ export interface ActiveOrder {
 
 export interface ActiveTrades {
     activeOrders: Array<ActiveOrder>
+    lastUpdatedAt: Date
+}
+
+export interface FilledOrdersState {
+    filledOrders: Array<ActiveOrder>
+    lastUpdatedAt: Date
 }
 
 export interface AppState {
     activeTrades: ActiveTrades
+    filledOrders: FilledOrdersState
     lastUpdatedAt: Date
 }
 
@@ -37,6 +44,10 @@ function AppStateView(props: { state: AppState | undefined }) {
             <div>
                 <div>{state.activeTrades.activeOrders.map(a => <div>{JSON.stringify(a)}</div>)}</div>
             </div>
+            <h2>Trade History</h2>
+            <div>
+                <div>{state.filledOrders.filledOrders.map(a => <div>{JSON.stringify(a)}</div>)}</div>
+            </div>
         </div>
     );
 }
@@ -54,12 +65,20 @@ const DataSource: React.FC = () => {
             try {
                 const nextState = JSON.parse(jsonData);
                 nextState.lastUpdatedAt = new Date(nextState.lastUpdatedAt * 1000)
+                nextState.activeTrades = {
+                    ...nextState.activeTrades,
+                    lastUpdatedAt: new Date(nextState.activeTrades.lastUpdatedAt * 1000),
+                }
                 nextState.activeTrades.activeOrders = nextState.activeTrades.activeOrders.map((o: { created_at: number; }) => {
                     return {
                         ...o,
                         created_at: new Date(o.created_at * 1000),
                     }
                 })
+                nextState.filledOrders = {
+                    ...nextState.filledOrders,
+                    lastUpdatedAt: new Date(nextState.filledOrders.lastUpdatedAt * 1000),
+                }
                 console.log('state=', nextState);
                 setAppState(nextState)
             } catch (e) {

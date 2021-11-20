@@ -52,10 +52,6 @@ private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(Ja
 fun <T> toJson(value: T): String = objectMapper.writeValueAsString(value)
 fun <T> toJsonBytes(value: T): ByteArray = objectMapper.writeValueAsBytes(value)
 
-data class ActiveTradesState(
-    val activeOrders: List<ActiveOrder>,
-)
-
 fun getRequestId(): String = MDC.get("r-id") ?: generateRequestId()
 fun generateRequestId(): String = UUID.randomUUID().toString()
 
@@ -81,7 +77,18 @@ fun main() {
         )
     }
 
-    val reporter = ReportTicker(firiClient)
+    val reporter = ReportTicker(
+        firiClient = firiClient,
+        onFilledOrders = { orders: List<ActiveOrder> ->
+            val now = Instant.now()
+            AppState.update {
+                it.copy(filledOrders = it.filledOrders.copy(
+                    lastUpdatedAt = now,
+                    filledOrders = orders,
+                ))
+            }
+        },
+    )
     val ticker = Ticker(
         firiClient,
         taskMaster = TaskMaster(firiClient),
