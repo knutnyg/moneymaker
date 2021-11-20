@@ -1,5 +1,6 @@
 import './App.scss';
 import {Fragment, useEffect, useState} from "react";
+import useInterval from "./hooks/useInterval";
 
 export interface ActiveOrder {
     id: number
@@ -29,6 +30,14 @@ export interface AppState {
     lastUpdatedAt: Date
 }
 
+const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
+    const [time, setTime] = useState(new Date())
+    useInterval(() => {
+        setTime(new Date())
+    }, 1000)
+    return (<span>{getRelativeTime(ts, time)}</span>)
+}
+
 const H1: React.FC = ({children}) => <h1 style={{paddingTop: '10px'}}>{children}</h1>
 const H2: React.FC = ({children}) => <h2 style={{paddingTop: '10px'}}>{children}</h2>
 
@@ -42,7 +51,7 @@ function AppStateView(props: { state: AppState | undefined }) {
         <div>
             <div>
                 <div>Last updated:</div>
-                <div>{getRelativeTime(state.lastUpdatedAt)}</div>
+                <div><RelativeTime ts={state.lastUpdatedAt} /></div>
             </div>
             <H2>Active orders</H2>
             <div>
