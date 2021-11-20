@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
 import xyz.nygaard.core.AppState
+import xyz.nygaard.core.ReportTicker
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
@@ -43,7 +44,6 @@ import java.io.FileInputStream
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
-import javax.crypto.spec.SecretKeySpec
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
 
@@ -61,71 +61,12 @@ fun generateRequestId(): String = UUID.randomUUID().toString()
 
 @ExperimentalCoroutinesApi
 fun main() {
-    val props = Properties()
-
-    val propertiesFile = File("src/main/resources/config.properties")
-    if (propertiesFile.exists()) {
-        log.info("loaded config.properties")
-        props.load(FileInputStream("src/main/resources/config.properties"))
-    }
-
-    val environment = Config(
-        staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
-        clientId = props["CLIENT_ID"].toString(),
-        clientSecret = props["CLIENT_SECRET"].toString(),
-        apiKey = props["API_KEY"].toString(),
-        firiBaseUrl = "https://api.firi.com/v2/"
-    )
-
-    val noLog = true
-    val httpClient = HttpClient(CIO) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer() {
-                disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                registerModule(JavaTimeModule())
-            }
-        }
-        install("RequestLogging") {
-            val startedAtKey = AttributeKey<Long>("started-at")
-
-            if (noLog) {
-                return@install
-            }
-            sendPipeline.intercept(HttpSendPipeline.Monitoring) {
-                val start = Instant.now().toEpochMilli()
-                context.attributes.put(startedAtKey, start)
-                log.info(
-                    "Request:  ---> [{}] {} {}",
-                    context.headers.get("X-Request-ID") ?: "NONE",
-                    context.method.value,
-                    Url(context.url),
-                )
-            }
-            receivePipeline.intercept(HttpReceivePipeline.After) {
-                val start = context.attributes[startedAtKey]
-                val elapsedMs = Instant.now().toEpochMilli() - start
-                log.info(
-                    "Response: <--- [{}] {} {}: {} in {}ms",
-                    context.request.headers["X-Request-ID"] ?: "NONE",
-                    context.request.method.value,
-                    context.request.url,
-                    context.response.status.toString(),
-                    elapsedMs,
-                )
-            }
-        }
-        //install(Logging) {
-        //    level = LogLevel.INFO
-        //}
-        defaultRequest {
-            header("X-Request-ID", getRequestId())
-        }
-    }
-
-    val secretKey = createKey(environment.clientSecret)
+    val config = setupConfig()
+    val httpClient = setupHttpClient(config.noLog)
+    val secretKey = createKey(config.clientSecret)
 
     val firiClient = FiriClient(
-        clientId = environment.clientId,
+        clientId = config.clientId,
         clientSecret = secretKey,
         httpclient = httpClient
     )
@@ -140,6 +81,7 @@ fun main() {
         )
     }
 
+    val reporter = ReportTicker(firiClient)
     val ticker = Ticker(
         firiClient,
         taskMaster = TaskMaster(firiClient),
@@ -162,16 +104,81 @@ fun main() {
     )
 
     val timer = Timer("tick")
-    timer.scheduleAtFixedRate(ticker, 2000, 5000)
+    timer.scheduleAtFixedRate(ticker, 2000, 5000) // every 5 sec
+    timer.scheduleAtFixedRate(reporter, 5000, 300000) // every  5 min
 
     val server = embeddedServer(Netty, port = 8020, host = "localhost") {
         buildApplication(
-            staticResourcesPath = environment.staticResourcesPath,
+            staticResourcesPath = config.staticResourcesPath,
             firiClient = firiClient,
         )
     }.start()
 
     setupTearDownHook(timer, server, firiClient)
+}
+
+private fun setupHttpClient(noLog: Boolean) = HttpClient(CIO) {
+    install(JsonFeature) {
+        serializer = JacksonSerializer() {
+            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            registerModule(JavaTimeModule())
+        }
+    }
+    install("RequestLogging") {
+        val startedAtKey = AttributeKey<Long>("started-at")
+
+        if (noLog) {
+            return@install
+        }
+        sendPipeline.intercept(HttpSendPipeline.Monitoring) {
+            val start = Instant.now().toEpochMilli()
+            context.attributes.put(startedAtKey, start)
+            log.info(
+                "Request:  ---> [{}] {} {}",
+                context.headers.get("X-Request-ID") ?: "NONE",
+                context.method.value,
+                Url(context.url),
+            )
+        }
+        receivePipeline.intercept(HttpReceivePipeline.After) {
+            val start = context.attributes[startedAtKey]
+            val elapsedMs = Instant.now().toEpochMilli() - start
+            log.info(
+                "Response: <--- [{}] {} {}: {} in {}ms",
+                context.request.headers["X-Request-ID"] ?: "NONE",
+                context.request.method.value,
+                context.request.url,
+                context.response.status.toString(),
+                elapsedMs,
+            )
+        }
+    }
+    //install(Logging) {
+    //    level = LogLevel.INFO
+    //}
+    defaultRequest {
+        header("X-Request-ID", getRequestId())
+    }
+}
+
+fun setupConfig(): Config {
+    val props = Properties()
+
+    val propertiesFile = File("src/main/resources/config.properties")
+    if (propertiesFile.exists()) {
+        log.info("loaded config.properties")
+        props.load(FileInputStream("src/main/resources/config.properties"))
+    }
+
+    return Config(
+        staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
+        clientId = props["CLIENT_ID"].toString(),
+        clientSecret = props["CLIENT_SECRET"].toString(),
+        apiKey = props["API_KEY"].toString(),
+        firiBaseUrl = "https://api.firi.com/v2/",
+        noLog = true,
+    )
+
 }
 
 private fun setupTearDownHook(
@@ -331,6 +338,7 @@ data class Config(
     val apiKey: String,
     val clientId: String,
     val clientSecret: String,
+    val noLog: Boolean = true,
 )
 
 fun getEnvOrDefault(name: String, defaultValue: String): String {

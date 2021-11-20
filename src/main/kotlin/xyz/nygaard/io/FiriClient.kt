@@ -46,6 +46,14 @@ class FiriClient(
         }
     }
 
+    suspend fun getFilledOrders(): List<ActiveOrder> =
+        try {
+            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}/history").receive()
+        } catch (e: Exception) {
+            log.info("Failed to fetch orders", e)
+            throw IOException("Failed to fetch orders", e)
+        }
+
     suspend fun fetchMarketTicker(): MarketTicker = try {
         httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker").receive()
     } catch (e: Exception) {
@@ -63,7 +71,8 @@ class FiriClient(
         }
     }
 
-    private suspend fun HttpClient.signedGet(urlString: String): HttpResponse = signedRequest(HttpMethod.Get, urlString)
+    private suspend fun HttpClient.signedGet(urlString: String): HttpResponse =
+        signedRequest(HttpMethod.Get, urlString)
 
     private suspend fun HttpClient.signedPost(
         urlString: String,

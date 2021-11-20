@@ -1,18 +1,20 @@
 package xyz.nygaard.io
 
 import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.log
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
-import kotlin.math.min
 
 data class OrderResponse(
     val id: Int
 )
 
+const val DAY = 60 * 60 * 24
+
 data class ActiveOrder(
     val id: Int,
-    val market: Market,
+    val market: Market = Market.BTCNOK,
     val type: OrderType,
     val price: Double,
     val remaining: Double,
@@ -28,6 +30,23 @@ data class ActiveOrder(
 
     @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.outOfSync(this, marketTicker)"))
     fun outOfSync(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()) = priceStrategy.outOfSync(this, marketTicker)
+
+    companion object {
+        fun List<ActiveOrder>.createReport(cutoff:Instant = Instant.now().minusSeconds(2L * DAY)) {
+
+            val relevantOrders = this.filter { it.created_at > cutoff }
+            val bids = relevantOrders.filter { it.type == OrderType.bid }
+            val bidSumPaydNOK = bids.sumOf { it.matched * it.price }.round(2)
+            val bidSumBTCBought = bids.sumOf { it.matched }.round(6)
+
+            val asks = relevantOrders.filter { it.type == OrderType.ask }
+            val askSumPaydBTC = asks.sumOf { it.matched * it.price }.round(2)
+            val askSumBTCSold = asks.sumOf { it.matched }.round(6)
+
+            log.info("Last 48h we matched ${bids.size} bids and bought $bidSumBTCBought BTC for $bidSumPaydNOK NOK")
+            log.info("Last 48h we matched ${asks.size} asks and sold $askSumBTCSold BTC for $askSumPaydBTC NOK")
+        }
+    }
 }
 
 enum class Market { BTCNOK }
@@ -45,3 +64,5 @@ data class MarketTicker(
         return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
     }
 }
+
+fun Double.round(decimals: Int = 2) = BigDecimal(this).setScale(decimals, RoundingMode.HALF_UP).toDouble()
