@@ -34,7 +34,7 @@ data class ActiveOrder(
     companion object {
         fun List<ActiveOrder>.createReport(cutoff:Instant = Instant.now().minusSeconds(2L * DAY)) {
 
-            val relevantOrders = this.filter { it.created_at > cutoff }
+            val relevantOrders = this.filter { it.created_at > cutoff }.filter { it.amount == 0.0001 }
             val bids = relevantOrders.filter { it.type == OrderType.bid }
             val bidSumPaydNOK = bids.sumOf { it.matched * it.price }.round(2)
             val bidSumBTCBought = bids.sumOf { it.matched }.round(6)
@@ -45,6 +45,14 @@ data class ActiveOrder(
 
             log.info("Last 48h we matched ${bids.size} bids and bought $bidSumBTCBought BTC for $bidSumPaydNOK NOK")
             log.info("Last 48h we matched ${asks.size} asks and sold $askSumBTCSold BTC for $askSumPaydBTC NOK")
+
+            val avgBuy = (bids.sumOf { it.price * it.matched } / bids.size).round(2)
+            val avgSale = (asks.sumOf { it.price * it.matched } / asks.size).round(2)
+            val fees = ((askSumPaydBTC + bidSumPaydNOK) * 0.01).round(2)
+            val avgFees = (fees / (bids.size + asks.size)).round(2)
+
+            log.info("$: Avg buy: ${avgBuy}, avg sale: $avgSale, avg fees: $avgFees")
+            log.info("$: We are on average earning ${(avgSale - avgBuy - avgFees).round(2)} per trade! 💸")
         }
     }
 }
