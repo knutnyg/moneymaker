@@ -81,7 +81,7 @@ function AppStateView(props: { state: AppState | undefined }) {
             <H2>Market</H2>
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 2fr 2fr 1fr 1fr',
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
             }}>
                 <div style={{fontWeight: 'bold'}} />
                 <div style={{fontWeight: 'bold'}}>Ask</div>
@@ -108,7 +108,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 1fr',
                     }}
                 >
                     {state.activeTrades.activeOrders.map(a => <Fragment key={`${a.id}`}>
@@ -117,7 +117,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
                         <div>{a.price}</div>
-                        <div>{a.price * a.amount}</div>
+                        <div>{(a.price * a.amount).toFixed(2)} kr</div>
                     </Fragment>)}
                 </div>
             </div>
@@ -126,7 +126,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 1fr',
                     }}
                 >
                     {state.filledOrders.filledOrders.map(a => <Fragment key={`${a.id}`}>
@@ -135,7 +135,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
                         <div>{a.price}</div>
-                        <div>{a.price * a.amount}</div>
+                        <div>{(a.price * a.amount).toFixed(2)} kr</div>
                     </Fragment>)}
                 </div>
             </div>
