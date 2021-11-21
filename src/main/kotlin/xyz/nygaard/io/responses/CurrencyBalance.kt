@@ -1,3 +1,5 @@
+package xyz.nygaard.io.responses
+
 import java.math.BigDecimal
 
 data class CurrencyBalance(

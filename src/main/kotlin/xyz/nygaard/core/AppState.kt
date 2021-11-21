@@ -47,7 +47,7 @@ data class AppState(
             )
         )
 
-        internal fun notify(state: AppState) {
+        private fun notify(state: AppState) {
             listeners.forEach { (_, u) -> u(state) }
         }
 

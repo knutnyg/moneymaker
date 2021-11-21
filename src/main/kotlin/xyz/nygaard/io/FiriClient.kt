@@ -1,6 +1,6 @@
 package xyz.nygaard.io
 
-import CurrencyBalance
+import xyz.nygaard.io.responses.CurrencyBalance
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
