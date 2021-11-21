@@ -121,7 +121,7 @@ fun main() {
     timer.scheduleAtFixedRate(ticker, 2000, 5000) // every 5 sec
     timer.scheduleAtFixedRate(reporter, 5000, 300000) // every  5 min
 
-    val server = embeddedServer(Netty, port = config.port, host = "localhost") {
+    val server = embeddedServer(Netty, port = config.port, host = config.host) {
         buildApplication(
             staticResourcesPath = config.staticResourcesPath,
             firiClient = firiClient,
@@ -191,7 +191,8 @@ fun setupConfig(): Config {
         apiKey = props["API_KEY"].toString(),
         firiBaseUrl = "https://api.firi.com/v2/",
         noLog = true,
-        port = props.getOrDefault("MONEYMAKER_PORT", "8020").toString().toInt()
+        port = props.getOrDefault("MONEYMAKER_PORT", "8020").toString().toInt(),
+        host = props.getOrDefault("MONEYMAKER_HOST", "localhost").toString()
     )
 
 }
@@ -355,6 +356,7 @@ data class Config(
     val clientSecret: String,
     val noLog: Boolean = true,
     val port: Int = 8020,
+    val host: String = "localhost",
 )
 
 fun getEnvOrDefault(name: String, defaultValue: String): String {
