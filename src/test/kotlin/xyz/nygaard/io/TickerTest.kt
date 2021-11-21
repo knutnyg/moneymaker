@@ -14,7 +14,8 @@ internal class TickerTest {
         firiClient = firiMock,
         taskMaster = mockk(),
         onActiveOrders = mockk(),
-        onActions = mockk()
+        onActions = mockk(),
+        onMarket = mockk()
     )
 
     @Test

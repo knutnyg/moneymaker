@@ -1,10 +1,12 @@
 package xyz.nygaard.io
 
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import xyz.nygaard.core.PriceStrategy
+import java.time.Instant
 
 internal class PriceStrategyTest {
 
@@ -70,4 +72,168 @@ internal class PriceStrategyTest {
         val ticker = MarketTicker(521326.69, 527304.33)
         assertFalse(master.outOfSync(activeOrder(ActiveOrder.OrderType.bid, 520449.37), ticker))
     }
+
+    private val driftPriceStrategy = PriceStrategy(
+        maxAskDrift = 1.003,
+        maxBidDrift = 0.997
+    )
+
+    @Test
+    fun `ask order equal to ticker ask`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 1000.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid order equal to ticker bid`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 700.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `ask just below ticker ask`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 999.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `ask just above ticker ask`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 1001.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `ask far above ticker bid`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 1100.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid just above ticker bid`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 701.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid just below ticker bid`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 699.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid far below ticker bid`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 600.0),
+                MarketTicker(700.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid far below ticker bid with low spread`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 529000.0),
+                MarketTicker(
+                    535000.0,
+                    536000.0
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `ask far above ticker ask with low spread`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 542000.0),
+                MarketTicker(
+                    535000.0,
+                    536000.0
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `bid far below low spread`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 850.0),
+                MarketTicker(990.0, 1000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid close to bid high spread under limit`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 529000.0),
+                MarketTicker(530000.0, 540000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `bid close to bid high spread over limit`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.bid, 528000.0),
+                MarketTicker(530000.0, 540000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `ask close to ask high spread under limit`() {
+        assertFalse(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 540500.0),
+                MarketTicker(530000.0, 540000.0)
+            )
+        )
+    }
+
+    @Test
+    fun `ask close to ask high spread over limit`() {
+        Assertions.assertTrue(
+            driftPriceStrategy.outOfSync(
+                activeOrder(ActiveOrder.OrderType.ask, 542000.0),
+                MarketTicker(530000.0, 540000.0)
+            )
+        )
+    }
 }
+
+fun activeOrder(type: ActiveOrder.OrderType, price: Double) =
+    ActiveOrder(1, Market.BTCNOK, type, price, 1.0, 1.0, 1.0, 0.0, Instant.now())
