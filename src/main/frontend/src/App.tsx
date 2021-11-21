@@ -81,8 +81,9 @@ function AppStateView(props: { state: AppState | undefined }) {
             <H2>Market</H2>
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 2fr 2fr 1fr 1fr',
             }}>
+                <div style={{fontWeight: 'bold'}} />
                 <div style={{fontWeight: 'bold'}}>Ask</div>
                 <div style={{fontWeight: 'bold'}}>Bid</div>
                 <div style={{fontWeight: 'bold'}}>Spread</div>
@@ -92,8 +93,9 @@ function AppStateView(props: { state: AppState | undefined }) {
                         const p = m.spread / ((m.ask + m.bid) / 2) * 100
                         return (
                             <Fragment key={m.id}>
-                                <div>{m.ask}</div>
-                                <div>{m.bid}</div>
+                                <div>{m.id}</div>
+                                <div>{m.ask.toFixed(0)}</div>
+                                <div>{m.bid.toFixed(0)}</div>
                                 <div>{m.spread}</div>
                                 <div>{p.toFixed(2)}%</div>
                             </Fragment>
