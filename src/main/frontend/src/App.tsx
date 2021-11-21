@@ -53,6 +53,10 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div>Last updated:</div>
                 <div><RelativeTime ts={state.lastUpdatedAt} /></div>
             </div>
+            <H2>Market</H2>
+            <div>
+
+            </div>
             <H2>Active orders</H2>
             <div>
                 <div
