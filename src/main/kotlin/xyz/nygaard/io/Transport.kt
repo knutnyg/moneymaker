@@ -76,6 +76,6 @@ data class MarketTicker(
     fun spreadAsPercentage(): BigDecimal = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
     override fun toString(): String {
-        return "MarketTick BTCNOK: bid: ${ActiveOrder.OrderType.bid} NOK, ask: ${ActiveOrder.OrderType.ask} NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
+        return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
     }
 }
