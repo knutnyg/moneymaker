@@ -6,7 +6,7 @@ val kotlinVersion = "1.3.40"
 val junitJupiterVersion = "5.8.1"
 
 group = "xyz.nygaard"
-version = "1.1"
+version = "1.0"
 
 plugins {
     kotlin("jvm") version "1.6.0"
@@ -56,7 +56,7 @@ tasks {
     }
 
     named<Jar>("jar") {
-        archiveBaseName.set("app")
+        archiveBaseName.set("moneymaker")
 
         manifest {
             attributes["Main-Class"] = "xyz.nygaard.BootstrapKt"
