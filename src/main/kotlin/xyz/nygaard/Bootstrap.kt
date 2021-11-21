@@ -66,7 +66,7 @@ fun main() {
     val firiClient = FiriClient(
         clientId = config.clientId,
         clientSecret = secretKey,
-        httpclient = httpClient
+        httpclient = httpClient,
     )
 
     val active = runBlocking { firiClient.getActiveOrders() }
@@ -98,7 +98,6 @@ fun main() {
             AppState.update {
                 it.copy(
                     prevActionSet = actions,
-                    lastUpdatedAt = Instant.now(),
                 )
             }
         },
@@ -106,7 +105,6 @@ fun main() {
             AppState.update {
                 it.copy(
                     activeTrades = it.activeTrades.copy(activeOrders = activeOrders),
-                    lastUpdatedAt = Instant.now(),
                 )
             }
         },
