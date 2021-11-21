@@ -27,12 +27,6 @@ data class ActiveOrder(
 ) {
     enum class OrderType { bid, ask }
 
-    @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.isValid(this, marketTicker)"), )
-    fun valid(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()): Boolean = priceStrategy.isValid(this, marketTicker)
-
-    @Deprecated("use PriceStrategy", ReplaceWith("priceStrategy.outOfSync(this, marketTicker)"))
-    fun outOfSync(marketTicker: MarketTicker, priceStrategy: PriceStrategy = PriceStrategy()) = priceStrategy.outOfSync(this, marketTicker)
-
     companion object {
         fun List<ActiveOrder>.createReport(cutoff:Instant = Instant.now().minusSeconds(2L * DAY)) {
 
