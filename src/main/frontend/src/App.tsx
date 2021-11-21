@@ -1,52 +1,8 @@
 import './App.scss';
 import {Fragment, useEffect, useState} from "react";
 import useInterval from "./hooks/useInterval";
-
-export interface ActiveOrder {
-    id: number
-    market: 'BTCNOK'
-    type: 'bid' | 'ask'
-    price: number
-    remaining: number
-    amount: number
-    matched: number
-    cancelled: number
-    created_at: Date
-}
-
-export interface ActiveTrades {
-    activeOrders: Array<ActiveOrder>
-    lastUpdatedAt: Date
-}
-
-export interface FilledOrdersState {
-    filledOrders: Array<ActiveOrder>
-    lastUpdatedAt: Date
-}
-
-export interface MarketTicker {
-    bid: number
-    ask: number
-    spread: number
-}
-
-export interface MarketState {
-    markets: {
-        [keyof: string]: MarketTicker
-    }
-    lastUpdatedAt: Date
-}
-
-export interface AppState {
-    market: MarketState
-    activeTrades: ActiveTrades
-    filledOrders: FilledOrdersState
-    lastUpdatedAt: Date
-}
-
-export enum Markets {
-    BTCNOK = 'BTCNOK'
-}
+import {AppState, parseAppState} from "./api/api";
+import {formatDate, getRelativeTime} from "./util/time";
 
 const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
     const [time, setTime] = useState(new Date())
@@ -112,7 +68,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                     }}
                 >
                     {state.activeTrades.activeOrders.map(a => <Fragment key={`${a.id}`}>
-                        <div>{format(a.created_at)}</div>
+                        <div>{formatDate(a.created_at)}</div>
                         <div>{a.market}</div>
                         <div>{a.type}</div>
                         <div>{a.amount}</div>
@@ -130,7 +86,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                     }}
                 >
                     {state.filledOrders.filledOrders.map(a => <Fragment key={`${a.id}`}>
-                        <div>{format(a.created_at)}</div>
+                        <div>{formatDate(a.created_at)}</div>
                         <div>{a.market}</div>
                         <div>{a.type}</div>
                         <div>{a.amount}</div>
@@ -141,40 +97,6 @@ function AppStateView(props: { state: AppState | undefined }) {
             </div>
         </div>
     );
-}
-
-function format(d: Date): string {
-    const parts = d.toISOString().split('T');
-    const date = parts[0]
-    const time = parts[1].substr(0, 8)
-    return `${date} ${time}`
-}
-
-function parseMessage(data: string): AppState {
-    const nextState = JSON.parse(data);
-    nextState.lastUpdatedAt = new Date(nextState.lastUpdatedAt * 1000)
-    nextState.activeTrades = {
-        ...nextState.activeTrades,
-        lastUpdatedAt: new Date(nextState.activeTrades.lastUpdatedAt * 1000),
-    }
-    nextState.activeTrades.activeOrders = nextState.activeTrades.activeOrders.map((o: { created_at: number; }) => {
-        return {
-            ...o,
-            created_at: new Date(o.created_at * 1000),
-        }
-    })
-    nextState.filledOrders.filledOrders = nextState.filledOrders.filledOrders.map((o: { created_at: number; }) => {
-        return {
-            ...o,
-            created_at: new Date(o.created_at * 1000),
-        }
-    })
-    nextState.filledOrders = {
-        ...nextState.filledOrders,
-        lastUpdatedAt: new Date(nextState.filledOrders.lastUpdatedAt * 1000),
-    }
-    console.log('state=', nextState);
-    return nextState
 }
 
 function createWebSocket(path: string): string {
@@ -188,19 +110,20 @@ const DataSource: React.FC = () => {
     const [appState, setAppState] = useState<AppState | undefined>()
 
     useEffect(() => {
-
         const url = createWebSocket('/api/app/state/ws')
-        console.log('subscribe url=' + url);
-        //const wsSource = new WebSocket('ws://localhost:8020/api/app/state/ws');
+        console.log('subscribe to url=' + url);
         const wsSource = new WebSocket(url);
+        //const wsSource = new WebSocket('ws://localhost:8020/api/app/state/ws');
+
         wsSource.onerror = (err) => {
             console.log('onerror', err)
-            setError(`error: ${err}`)
+            const ts = new Date(err.timeStamp)
+            setError(`error at ${ts.toISOString()}: ${err}`)
         }
         wsSource.onmessage = (evt) => {
             const jsonData = evt.data;
             try {
-                const nextState = parseMessage(jsonData)
+                const nextState = parseAppState(jsonData)
                 setAppState(nextState)
             } catch (err) {
                 console.log('error parsing msg: ', err)
@@ -245,29 +168,3 @@ function App() {
 }
 
 export default App;
-
-// in miliseconds
-const units = {
-    year: 24 * 60 * 60 * 1000 * 365,
-    month: 24 * 60 * 60 * 1000 * 365 / 12,
-    day: 24 * 60 * 60 * 1000,
-    hour: 60 * 60 * 1000,
-    minute: 60 * 1000,
-    second: 1000
-}
-
-const rtf = new Intl.RelativeTimeFormat('nb', {numeric: 'auto'})
-
-const getRelativeTime = (d1: Date, d2 = new Date()) => {
-    const elapsed = d1.valueOf() - d2.valueOf()
-
-    // "Math.abs" accounts for both "past" & "future" scenarios
-    for (var u in units) {
-        // @ts-ignore
-        if (Math.abs(elapsed) > units[u] || u === 'second') {
-            // @ts-ignore
-            return rtf.format(Math.round(elapsed / units[u]), u)
-        }
-    }
-}
-
