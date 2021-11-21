@@ -113,8 +113,8 @@ function AppStateView(props: { state: AppState | undefined }) {
                 >
                     {state.activeTrades.activeOrders.map(a => <Fragment key={`${a.id}`}>
                         <div>{format(a.created_at)}</div>
-                        <div>{a.type}</div>
                         <div>{a.market}</div>
+                        <div>{a.type}</div>
                         <div>{a.amount}</div>
                         <div>{a.price.toFixed(2)}</div>
                         <div>{(a.price * a.amount).toFixed(2)} kr</div>
@@ -131,8 +131,8 @@ function AppStateView(props: { state: AppState | undefined }) {
                 >
                     {state.filledOrders.filledOrders.map(a => <Fragment key={`${a.id}`}>
                         <div>{format(a.created_at)}</div>
-                        <div>{a.type}</div>
                         <div>{a.market}</div>
+                        <div>{a.type}</div>
                         <div>{a.amount}</div>
                         <div>{a.price.toFixed(2)}</div>
                         <div>{(a.price * a.amount).toFixed(2)} kr</div>
