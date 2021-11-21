@@ -3,25 +3,33 @@ package xyz.nygaard.core
 import io.ktor.application.*
 import xyz.nygaard.Action
 import xyz.nygaard.io.ActiveOrder
+import xyz.nygaard.io.Market
+import xyz.nygaard.io.MarketTicker
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 data class ActiveTradesState(
-    val lastUpdatedAt: Instant,
     val activeOrders: List<ActiveOrder>,
+    val lastUpdatedAt: Instant = Instant.now(),
 )
 
 data class FilledOrdersState(
-    val lastUpdatedAt: Instant,
     val filledOrders: List<ActiveOrder>,
+    val lastUpdatedAt: Instant = Instant.now(),
+)
+
+data class MarketState(
+    val markets: Map<Market, MarketTicker>,
+    val lastUpdatedAt: Instant = Instant.now(),
 )
 
 data class AppState(
+    val market: MarketState,
     val activeTrades: ActiveTradesState,
     val filledOrders: FilledOrdersState,
     val prevActionSet: List<Action>,
-    val lastUpdatedAt: Instant,
+    val lastUpdatedAt: Instant = Instant.now(),
 ) {
     companion object {
         private val listeners: ConcurrentHashMap<ApplicationCall, (AppState) -> Unit> = ConcurrentHashMap()
@@ -35,6 +43,7 @@ data class AppState(
                 ),
                 prevActionSet = listOf(),
                 lastUpdatedAt = Instant.now(),
+                market = MarketState(markets = mapOf()),
             )
         )
 

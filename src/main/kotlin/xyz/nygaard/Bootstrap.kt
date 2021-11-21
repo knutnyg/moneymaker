@@ -34,10 +34,12 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
 import xyz.nygaard.core.AppState
+import xyz.nygaard.core.MarketState
 import xyz.nygaard.core.ReportTicker
 import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
+import xyz.nygaard.io.Market
 import xyz.nygaard.util.createKey
 import java.io.File
 import java.io.FileInputStream
@@ -108,6 +110,13 @@ fun main() {
                 )
             }
         },
+        onMarket = { mt ->
+            AppState.update {
+                it.copy(
+                    market = MarketState(mapOf(Market.BTCNOK to mt)),
+                )
+            }
+        }
     )
 
     val timer = Timer("tick")

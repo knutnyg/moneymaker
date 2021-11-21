@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import xyz.nygaard.*
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
+import xyz.nygaard.io.MarketTicker
 import java.util.*
 import java.util.function.Consumer
 
@@ -15,6 +16,7 @@ class Ticker(
     private val taskMaster: TaskMaster,
     private val onActiveOrders: Consumer<List<ActiveOrder>>?,
     private val onActions: Consumer<List<Action>>?,
+    private val onMarket: (mt: MarketTicker) -> Unit,
 ) : TimerTask() {
     override fun run() = runBlocking {
         try {
@@ -27,6 +29,7 @@ class Ticker(
 
                 log.info(marketTicker.toString())
                 onActiveOrders?.accept(activeOrders)
+                onMarket(marketTicker)
 
                 val bidActions = BidMaster(activeOrders, marketTicker).execute()
                 val askActions = AskMaster(activeOrders, marketTicker).execute()

@@ -1,6 +1,8 @@
 package xyz.nygaard.io
 
 import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.io.ActiveOrder.OrderType.ask
+import xyz.nygaard.io.ActiveOrder.OrderType.bid
 import xyz.nygaard.log
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -62,18 +64,22 @@ data class ActiveOrder(
 
 enum class Market { BTCNOK }
 
+data class MarketStrategy (
+    val market: MarketTicker,
+    val priceStrategy: PriceStrategy = PriceStrategy(),
+) {
+    override fun toString(): String {
+        return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: ${market.spread} NOK(${market.spreadAsPercentage()}%)"
+    }
+//    internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
+}
+
 data class MarketTicker(
     val bid: Double,
     val ask: Double,
     val spread: Double = (ask - bid),
-    val priceStrategy: PriceStrategy = PriceStrategy()
 ) {
-
-    internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
-
-    override fun toString(): String {
-        return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
-    }
+    fun spreadAsPercentage(): BigDecimal = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 }
 
 fun Double.round(decimals: Int = 2) = BigDecimal(this).setScale(decimals, RoundingMode.HALF_UP).toDouble()
