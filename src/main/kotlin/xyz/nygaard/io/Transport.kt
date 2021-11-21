@@ -1,5 +1,6 @@
 package xyz.nygaard.io
 
+import round
 import xyz.nygaard.core.PriceStrategy
 import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.io.ActiveOrder.OrderType.bid
@@ -31,11 +32,10 @@ data class ActiveOrder(
         fun List<ActiveOrder>.createReport(cutoff:Instant = Instant.now().minusSeconds(2L * DAY)) {
 
             val relevantOrders = this.filter { it.created_at > cutoff }.filter { it.amount == 0.0001 }
-            val bids = relevantOrders.filter { it.type == OrderType.bid }
+            val (bids, asks) = relevantOrders.partition { it.type == bid }
+
             val bidSumPaydNOK = bids.sumOf { it.matched * it.price }.round(2)
             val bidSumBTCBought = bids.sumOf { it.matched }.round(6)
-
-            val asks = relevantOrders.filter { it.type == OrderType.ask }
             val askSumPaydBTC = asks.sumOf { it.matched * it.price }.round(2)
             val askSumBTCSold = asks.sumOf { it.matched }.round(6)
 
@@ -79,5 +79,3 @@ data class MarketTicker(
         return "MarketTick BTCNOK: bid: ${ActiveOrder.OrderType.bid} NOK, ask: ${ActiveOrder.OrderType.ask} NOK, spread: $spread NOK(${spreadAsPercentage()}%)"
     }
 }
-
-fun Double.round(decimals: Int = 2) = BigDecimal(this).setScale(decimals, RoundingMode.HALF_UP).toDouble()

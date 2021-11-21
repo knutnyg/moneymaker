@@ -1,8 +1,8 @@
 package xyz.nygaard.core
 
+import round
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.MarketTicker
-import java.math.RoundingMode
 import kotlin.math.max
 import kotlin.math.min
 
@@ -22,10 +22,10 @@ class PriceStrategy(
     }
 
     internal fun minAsk(bid: Double): Double =
-        (bid.toBigDecimal() * minAskSpread.toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
+        (bid * minAskSpread).round(2)
 
     internal fun maxBid(ask: Double): Double =
-        (ask.toBigDecimal() * (minBidSpread).toBigDecimal()).setScale(2, RoundingMode.HALF_UP).toDouble()
+        (ask * minBidSpread).round(2)
 
     fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
     fun bidPrice(marketTicker: MarketTicker) = min(maxBid(marketTicker.ask), marketTicker.bid)
