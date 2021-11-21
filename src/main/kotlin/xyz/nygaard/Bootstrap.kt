@@ -261,7 +261,7 @@ internal fun Application.buildApplication(
             get("/app/state/listen") {
                 val now = AppState.get()
 
-                val events = callbackFlow<AppState> {
+                val events = callbackFlow {
                     trySend(now)
                     AppState.listen(call) { state: AppState ->
                         trySend(state)
