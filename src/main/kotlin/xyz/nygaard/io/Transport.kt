@@ -63,7 +63,7 @@ data class MarketStrategy (
     val priceStrategy: PriceStrategy = PriceStrategy(),
 ) {
     override fun toString(): String {
-        return "MarketStrategy BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: ${market.spread} NOK(${market.spreadAsPercentage()}%)"
+        return "MarketStrategy BTCNOK: bid: ${market.bid} NOK, ask: ${market.ask} NOK, spread: ${market.spread} NOK(${market.spreadAsPercentage()}%)"
     }
 //    internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 }
