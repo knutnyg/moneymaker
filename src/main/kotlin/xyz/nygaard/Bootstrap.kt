@@ -15,6 +15,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.features.*
 import io.ktor.http.*
+import io.ktor.http.cio.websocket.*
 import io.ktor.http.content.*
 import io.ktor.jackson.*
 import io.ktor.response.*
@@ -22,8 +23,10 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collect
@@ -231,6 +234,7 @@ internal fun Application.buildApplication(
     install(CallLogging) {
         level = Level.TRACE
     }
+    install(WebSockets)
     routing {
         route("/api") {
             registerSelftestApi(httpClient)
@@ -258,6 +262,41 @@ internal fun Application.buildApplication(
                 val state = AppState.get()
                 call.respond(state)
             }
+            webSocket("/app/state/ws") {
+                log.info("new ws client")
+                val now = AppState.get()
+
+                send(toJson(now))
+                val events = callbackFlow {
+                    trySend(now)
+                    AppState.listen(call) { state: AppState ->
+                        trySend(state)
+                    }
+
+                    awaitClose {
+                        AppState.removeListener(call)
+                    }
+                }
+
+                try {
+                    events.collect {
+                        val state: AppState = it
+                        withContext(Dispatchers.IO) {
+                            log.info("push state for {}", call.request.origin.remoteHost)
+                            val data = toJson(state)
+                            send(data)
+                        }
+                    }
+                } catch (e: ClosedReceiveChannelException) {
+                    log.info("onClose ${closeReason.await()}")
+                } catch (e: Exception) {
+                    log.warn("error: ", e)
+                } finally {
+                    log.info("cleanup listener")
+                    AppState.removeListener(call)
+                }
+
+            }
             get("/app/state/listen") {
                 val now = AppState.get()
 
@@ -273,7 +312,6 @@ internal fun Application.buildApplication(
                 }
 
                 try {
-                    //call.response.cacheControl(CacheControl.NoCache(null))
                     call.response.headers.append(HttpHeaders.CacheControl, "no-cache, no-transform")
                     call.respondTextWriter(contentType = ContentType.Text.EventStream) {
                         events.collect {

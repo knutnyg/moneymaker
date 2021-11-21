@@ -83,7 +83,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                 display: 'grid',
                 gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
             }}>
-                <div style={{fontWeight: 'bold'}} />
+                <div style={{fontWeight: 'bold'}}/>
                 <div style={{fontWeight: 'bold'}}>Ask</div>
                 <div style={{fontWeight: 'bold'}}>Bid</div>
                 <div style={{fontWeight: 'bold'}}>Spread</div>
@@ -150,56 +150,73 @@ function format(d: Date): string {
     return `${date} ${time}`
 }
 
+function parseMessage(data: string): AppState {
+    const nextState = JSON.parse(data);
+    nextState.lastUpdatedAt = new Date(nextState.lastUpdatedAt * 1000)
+    nextState.activeTrades = {
+        ...nextState.activeTrades,
+        lastUpdatedAt: new Date(nextState.activeTrades.lastUpdatedAt * 1000),
+    }
+    nextState.activeTrades.activeOrders = nextState.activeTrades.activeOrders.map((o: { created_at: number; }) => {
+        return {
+            ...o,
+            created_at: new Date(o.created_at * 1000),
+        }
+    })
+    nextState.filledOrders.filledOrders = nextState.filledOrders.filledOrders.map((o: { created_at: number; }) => {
+        return {
+            ...o,
+            created_at: new Date(o.created_at * 1000),
+        }
+    })
+    nextState.filledOrders = {
+        ...nextState.filledOrders,
+        lastUpdatedAt: new Date(nextState.filledOrders.lastUpdatedAt * 1000),
+    }
+    console.log('state=', nextState);
+    return nextState
+}
+
+function createWebSocket(path: string): string {
+    const loc = window.location
+    const protocolPrefix = (loc.protocol === 'https:') ? 'wss:' : 'ws:';
+    return protocolPrefix + '//' + loc.host + path;
+}
+
 const DataSource: React.FC = () => {
     const [error, setError] = useState<string | undefined>()
     const [appState, setAppState] = useState<AppState | undefined>()
 
     useEffect(() => {
-        //const source = new EventSource('/api/app/state/listen');
-        console.log('subscribe')
-        const source = new EventSource('/api/app/state/listen', {
-            withCredentials: true,
-        });
-        source.onmessage = (evt) => {
-            //console.log('evt=', evt);
-            const jsonData = evt.data;
-            try {
-                const nextState = JSON.parse(jsonData);
-                nextState.lastUpdatedAt = new Date(nextState.lastUpdatedAt * 1000)
-                nextState.activeTrades = {
-                    ...nextState.activeTrades,
-                    lastUpdatedAt: new Date(nextState.activeTrades.lastUpdatedAt * 1000),
-                }
-                nextState.activeTrades.activeOrders = nextState.activeTrades.activeOrders.map((o: { created_at: number; }) => {
-                    return {
-                        ...o,
-                        created_at: new Date(o.created_at * 1000),
-                    }
-                })
-                nextState.filledOrders.filledOrders = nextState.filledOrders.filledOrders.map((o: { created_at: number; }) => {
-                    return {
-                        ...o,
-                        created_at: new Date(o.created_at * 1000),
-                    }
-                })
-                nextState.filledOrders = {
-                    ...nextState.filledOrders,
-                    lastUpdatedAt: new Date(nextState.filledOrders.lastUpdatedAt * 1000),
-                }
-                console.log('state=', nextState);
-                setAppState(nextState)
-            } catch (e) {
-                console.log('err=', e);
-            }
-        }
-        source.onerror = (err) => {
+
+        const url = createWebSocket('/api/app/state/ws')
+        console.log('subscribe url=' + url);
+        //const wsSource = new WebSocket('ws://localhost:8020/api/app/state/ws');
+        const wsSource = new WebSocket(url);
+        wsSource.onerror = (err) => {
             console.log('onerror', err)
             setError(`error: ${err}`)
+        }
+        wsSource.onmessage = (evt) => {
+            const jsonData = evt.data;
+            try {
+                const nextState = parseMessage(jsonData)
+                setAppState(nextState)
+            } catch (err) {
+                console.log('error parsing msg: ', err)
+                console.log('error parsing msg data=', jsonData)
+            }
+        }
+
+        wsSource.onclose = (evt) => {
+            console.log('onclose', evt)
+            const ts = new Date(evt.timeStamp)
+            setError(`connection closed at: ${ts.toISOString()}`)
         }
 
         return () => {
             console.log('unsubscribe')
-            source.close();
+            wsSource.close();
         }
     }, [setAppState])
 
