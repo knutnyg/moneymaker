@@ -207,7 +207,7 @@ const DataSource: React.FC = () => {
         <Fragment>
             <div className="main">
                 <div className="content">
-                    <h1>My app</h1>
+                    <h1>Moneymaker 🤑</h1>
                     <div>
                         {error && <span>{error}</span>}
                     </div>
