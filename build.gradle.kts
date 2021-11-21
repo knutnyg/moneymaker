@@ -4,10 +4,7 @@ val logbackVersion = "1.2.3"
 val logstashEncoderVersion = "5.1"
 val kotlinVersion = "1.3.40"
 val jacksonVersion = "2.9.7"
-val postgresVersion = "42.2.5"
-val flywayVersion = "5.2.4"
-val hikariVersion = "3.3.0"
-val junitJupiterVersion = "5.6.2"
+val junitJupiterVersion = "5.8.1"
 
 group = "xyz.nygaard"
 version = "1.1"
@@ -27,9 +24,6 @@ repositories {
 }
 
 dependencies {
-    implementation("javax.xml.bind:jaxb-api:2.3.1")
-    runtimeOnly("javax.json:javax.json-api:1.1.2")
-
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -50,9 +44,9 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     //Database
-    implementation("org.postgresql:postgresql:$postgresVersion")
-    implementation("com.zaxxer:HikariCP:$hikariVersion")
-    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.postgresql:postgresql:42.3.1")
+    implementation("com.zaxxer:HikariCP:5.0.0")
+    implementation("org.flywaydb:flyway-core:8.0.2")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
