@@ -46,6 +46,9 @@ data class ActiveOrder(
             log.info("Last 48h we matched ${bids.size} bids and bought $bidSumBTCBought BTC for $bidSumPaydNOK NOK")
             log.info("Last 48h we matched ${asks.size} asks and sold $askSumBTCSold BTC for $askSumPaydBTC NOK")
 
+            // Prevent dividing by zero
+            if (bids.isEmpty() || asks.isEmpty()) return
+
             val avgBuy = (bids.sumOf { it.price * it.matched } / bids.size).round(2)
             val avgSale = (asks.sumOf { it.price * it.matched } / asks.size).round(2)
             val fees = ((askSumPaydBTC + bidSumPaydNOK) * 0.01).round(2)
