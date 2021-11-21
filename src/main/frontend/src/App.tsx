@@ -24,10 +24,28 @@ export interface FilledOrdersState {
     lastUpdatedAt: Date
 }
 
+export interface MarketTicker {
+    bid: number
+    ask: number
+    spread: number
+}
+
+export interface MarketState {
+    markets: {
+        [keyof: string]: MarketTicker
+    }
+    lastUpdatedAt: Date
+}
+
 export interface AppState {
+    market: MarketState
     activeTrades: ActiveTrades
     filledOrders: FilledOrdersState
     lastUpdatedAt: Date
+}
+
+export enum Markets {
+    BTCNOK = 'BTCNOK'
 }
 
 const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
@@ -47,15 +65,41 @@ function AppStateView(props: { state: AppState | undefined }) {
     if (!state) {
         return (<div>Loading...</div>)
     }
+    const marketMap = state.market.markets || {};
+    const markets = Object.keys(marketMap)
+        .map(marketId => ({
+            ...marketMap[marketId],
+            id: marketId,
+        }))
+
     return (
         <div>
             <div>
                 <div>Last updated:</div>
-                <div><RelativeTime ts={state.lastUpdatedAt} /></div>
+                <div><RelativeTime ts={state.lastUpdatedAt}/></div>
             </div>
             <H2>Market</H2>
-            <div>
-
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr 1fr',
+            }}>
+                <div style={{fontWeight: 'bold'}}>Ask</div>
+                <div style={{fontWeight: 'bold'}}>Bid</div>
+                <div style={{fontWeight: 'bold'}}>Spread</div>
+                <div style={{fontWeight: 'bold'}}>%</div>
+                {
+                    markets.map(m => {
+                        const p = m.spread / ((m.ask + m.bid) / 2) * 100
+                        return (
+                            <Fragment key={m.id}>
+                                <div>{m.ask}</div>
+                                <div>{m.bid}</div>
+                                <div>{m.spread}</div>
+                                <div>{p.toFixed(2)}%</div>
+                            </Fragment>
+                        );
+                    })
+                }
             </div>
             <H2>Active orders</H2>
             <div>
@@ -65,7 +109,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
                     }}
                 >
-                    {state.activeTrades.activeOrders.map(a => <Fragment>
+                    {state.activeTrades.activeOrders.map(a => <Fragment key={`${a.id}`}>
                         <div>{format(a.created_at)}</div>
                         <div>{a.type}</div>
                         <div>{a.market}</div>
@@ -83,7 +127,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 2fr',
                     }}
                 >
-                    {state.filledOrders.filledOrders.map(a => <Fragment>
+                    {state.filledOrders.filledOrders.map(a => <Fragment key={`${a.id}`}>
                         <div>{format(a.created_at)}</div>
                         <div>{a.type}</div>
                         <div>{a.market}</div>
@@ -105,6 +149,7 @@ function format(d: Date): string {
 }
 
 const DataSource: React.FC = () => {
+    const [error, setError] = useState<string | undefined>()
     const [appState, setAppState] = useState<AppState | undefined>()
 
     useEffect(() => {
@@ -143,6 +188,10 @@ const DataSource: React.FC = () => {
                 console.log('err=', e);
             }
         }
+        source.onerror = (err) => {
+            console.log('onerror', err)
+            setError(`error: ${err}`)
+        }
 
         return () => {
             console.log('unsubscribe')
@@ -155,6 +204,9 @@ const DataSource: React.FC = () => {
             <div className="main">
                 <div className="content">
                     <h1>My app</h1>
+                    <div>
+                        {error && <span>{error}</span>}
+                    </div>
                     <div>
                         <AppStateView state={appState}/>
                     </div>
