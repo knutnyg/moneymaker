@@ -157,7 +157,9 @@ const DataSource: React.FC = () => {
     useEffect(() => {
         //const source = new EventSource('/api/app/state/listen');
         console.log('subscribe')
-        const source = new EventSource('//localhost:8020/api/app/state/listen');
+        const source = new EventSource('/api/app/state/listen', {
+            withCredentials: true,
+        });
         source.onmessage = (evt) => {
             //console.log('evt=', evt);
             const jsonData = evt.data;

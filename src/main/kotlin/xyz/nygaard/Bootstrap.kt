@@ -273,7 +273,8 @@ internal fun Application.buildApplication(
                 }
 
                 try {
-                    call.response.cacheControl(CacheControl.NoCache(null))
+                    //call.response.cacheControl(CacheControl.NoCache(null))
+                    call.response.headers.append(HttpHeaders.CacheControl, "no-transform")
                     call.respondTextWriter(contentType = ContentType.Text.EventStream) {
                         events.collect {
                             val state: AppState = it
