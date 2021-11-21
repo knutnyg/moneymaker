@@ -191,7 +191,7 @@ fun setupConfig(): Config {
         apiKey = props["API_KEY"].toString(),
         firiBaseUrl = "https://api.firi.com/v2/",
         noLog = true,
-        port = getEnvOrDefault("MONEYMAKER_PORT", "8020").toInt()
+        port = props.getOrDefault("MONEYMAKER_PORT", "8020").toString().toInt()
     )
 
 }
