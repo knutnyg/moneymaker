@@ -19,6 +19,10 @@ data class FilledOrdersState(
     val lastUpdatedAt: Instant = Instant.now(),
 )
 
+data class ActionsState(
+    val actions: List<Action>,
+    val lastUpdatedAt: Instant = Instant.now(),
+)
 data class MarketState(
     val markets: Map<Market, MarketTicker>,
     val lastUpdatedAt: Instant = Instant.now(),
@@ -28,7 +32,7 @@ data class AppState(
     val market: MarketState,
     val activeTrades: ActiveTradesState,
     val filledOrders: FilledOrdersState,
-    val prevActionSet: List<Action>,
+    val prevActionSet: ActionsState,
     val lastUpdatedAt: Instant = Instant.now(),
 ) {
     companion object {
@@ -41,7 +45,7 @@ data class AppState(
                     filledOrders = listOf(),
                     lastUpdatedAt = Instant.now(),
                 ),
-                prevActionSet = listOf(),
+                prevActionSet = ActionsState(listOf()),
                 lastUpdatedAt = Instant.now(),
                 market = MarketState(markets = mapOf()),
             )

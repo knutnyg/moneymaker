@@ -74,7 +74,7 @@ internal class BidMasterTest {
         )
 
         assertThat(actions).containsExactly(
-            ClearOrders,
+            ClearOrders(),
             AddBid(req = req),
         )
     }
@@ -92,7 +92,7 @@ internal class BidMasterTest {
         )
 
         assertThat(actions).containsExactly(
-            ClearOrders,
+            ClearOrders(),
             AddBid(req = req),
         )
     }

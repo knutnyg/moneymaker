@@ -1,7 +1,7 @@
 import './App.scss';
-import {Fragment, useEffect, useState} from "react";
+import React, {Fragment, useEffect, useState} from "react";
 import useInterval from "./hooks/useInterval";
-import {AppState, parseAppState} from "./api/api";
+import {AppState, displayAction, parseAppState} from "./api/api";
 import {formatDate, getRelativeTime} from "./util/time";
 
 const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
@@ -105,6 +105,24 @@ function createWebSocket(path: string): string {
     return protocolPrefix + '//' + loc.host + path;
 }
 
+const Sidebar: React.FC<{ appState?: AppState }> = ({appState}) => {
+    if (!appState) {
+        return null
+    }
+    const actions = appState.prevActionSet.actions
+    return (
+        <aside style={{display: 'grid', justifyContent: 'center', alignContent: 'center'}}>
+            <div>Latest Actions</div>
+            <ol>
+                {actions.map((val, idx) =>
+                    <li key={idx}>{displayAction(val)}</li>
+                )}
+            </ol>
+            <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
+        </aside>
+    );
+}
+
 const DataSource: React.FC = () => {
     const [error, setError] = useState<string | undefined>()
     const [appState, setAppState] = useState<AppState | undefined>()
@@ -146,12 +164,13 @@ const DataSource: React.FC = () => {
     return (
         <Fragment>
             <div className="main">
-                <div className="content">
-                    <h1>Moneymaker 🤑</h1>
-                    <div>
-                        {error && <span>{error}</span>}
-                    </div>
-                    <div>
+                <div className="layout">
+                    <Sidebar appState={appState}/>
+                    <div className="content">
+                        <h1>Moneymaker 🤑</h1>
+                        <div>
+                            {error && <span>{error}</span>}
+                        </div>
                         <AppStateView state={appState}/>
                     </div>
                 </div>

@@ -8,7 +8,7 @@ import xyz.nygaard.io.ActiveOrder
 
 internal class TaskMasterKtTest {
 
-    private val clear = ClearOrders
+    private val clear = ClearOrders()
     private val addA = AddAsk(mockk())
     private val keepA = KeepAsk(mockk())
 

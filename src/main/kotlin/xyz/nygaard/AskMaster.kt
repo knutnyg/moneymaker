@@ -27,7 +27,7 @@ class AskMaster(
             actions.add(KeepAsk(CreateOrderRequest(ask, activeAsks.first().price)))
         } else {
             log.info("We have an ask we need to move")
-            actions.add(ClearOrders)
+            actions.add(ClearOrders())
             actions.add(AddAsk(req = priceStrategy.createAsk(marketTicker)))
         }
         actions

@@ -5,11 +5,11 @@ import xyz.nygaard.io.FiriClient
 
 
 sealed interface Action
-object ClearOrders : Action
-data class AddBid(val req: CreateOrderRequest) : Action
-data class AddAsk(val req: CreateOrderRequest) : Action
-data class KeepAsk(val req: CreateOrderRequest) : Action
-data class KeepBid(val req: CreateOrderRequest) : Action
+data class ClearOrders(val type: String = "ClearOrders") : Action
+data class AddBid(val req: CreateOrderRequest, val type: String = "AddBid") : Action
+data class AddAsk(val req: CreateOrderRequest, val type: String = "AddAsk") : Action
+data class KeepAsk(val req: CreateOrderRequest, val type: String = "KeepAsk") : Action
+data class KeepBid(val req: CreateOrderRequest, val type: String = "KeepBid") : Action
 
 class TaskMaster(
     private val firiClient: FiriClient,

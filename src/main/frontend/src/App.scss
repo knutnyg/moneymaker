@@ -25,6 +25,21 @@ body {
     bottom: 0;
 }
 
+.layout {
+    display: grid;
+    grid-template-columns: 6fr 300px;
+    grid-template-areas:
+            "content aside"
+            "footer footer";
+}
+
+.footer {
+  grid-area: footer;
+}
+aside {
+  grid-area: aside;
+}
+
 header {
     display: flex;
     flex-direction: row;
@@ -49,6 +64,7 @@ header .user {
 }
 
 .content {
+    grid-area: content;
     justify-content: left;
     font-size: 1.5rem;
     color: $secondaryColor;

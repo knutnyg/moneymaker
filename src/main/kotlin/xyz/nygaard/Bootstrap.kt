@@ -73,12 +73,14 @@ fun main() {
     )
 
     val active = runBlocking { firiClient.getActiveOrders() }
+    val now = Instant.now()
     AppState.update {
         it.copy(
             activeTrades = it.activeTrades.copy(
                 activeOrders = active,
+                lastUpdatedAt = now,
             ),
-            lastUpdatedAt = Instant.now(),
+            lastUpdatedAt = now,
         )
     }
 
@@ -88,8 +90,8 @@ fun main() {
             val now = Instant.now()
             AppState.update {
                 it.copy(filledOrders = it.filledOrders.copy(
-                    lastUpdatedAt = now,
                     filledOrders = orders,
+                    lastUpdatedAt = now,
                 ))
             }
         },
@@ -100,14 +102,20 @@ fun main() {
         onActions = { actions ->
             AppState.update {
                 it.copy(
-                    prevActionSet = actions,
+                    prevActionSet = it.prevActionSet.copy(
+                        actions = actions,
+                        lastUpdatedAt = Instant.now(),
+                    ),
                 )
             }
         },
         onActiveOrders = { activeOrders ->
             AppState.update {
                 it.copy(
-                    activeTrades = it.activeTrades.copy(activeOrders = activeOrders),
+                    activeTrades = it.activeTrades.copy(
+                        activeOrders = activeOrders,
+                        lastUpdatedAt = Instant.now(),
+                    ),
                 )
             }
         },
