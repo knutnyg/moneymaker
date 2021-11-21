@@ -292,7 +292,6 @@ internal fun Application.buildApplication(
                     log.info("cleanup listener")
                     AppState.removeListener(call)
                 }
-
             }
         }
 
