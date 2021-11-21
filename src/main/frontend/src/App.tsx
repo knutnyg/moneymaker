@@ -116,7 +116,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         <div>{a.type}</div>
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
-                        <div>{a.price}</div>
+                        <div>{a.price.toFixed(2)}</div>
                         <div>{(a.price * a.amount).toFixed(2)} kr</div>
                     </Fragment>)}
                 </div>
@@ -134,7 +134,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                         <div>{a.type}</div>
                         <div>{a.market}</div>
                         <div>{a.amount}</div>
-                        <div>{a.price}</div>
+                        <div>{a.price.toFixed(2)}</div>
                         <div>{(a.price * a.amount).toFixed(2)} kr</div>
                     </Fragment>)}
                 </div>
