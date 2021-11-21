@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.Companion.createReport
 import xyz.nygaard.io.FiriClient
+import xyz.nygaard.log
 import java.util.*
 
 class ReportTicker(
@@ -11,8 +12,12 @@ class ReportTicker(
     private val onFilledOrders: (next: List<ActiveOrder>) -> Unit,
 ) : TimerTask() {
     override fun run() {
-        val filledOrders = runBlocking { firiClient.getFilledOrders() }
-        onFilledOrders(filledOrders)
-        filledOrders.createReport()
+        try {
+            val filledOrders = runBlocking { firiClient.getFilledOrders() }
+            onFilledOrders(filledOrders)
+            filledOrders.createReport()
+        } catch (t: Throwable) {
+            log.error("crash: ", t)
+        }
     }
 }
