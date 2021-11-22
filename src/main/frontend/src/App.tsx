@@ -112,13 +112,15 @@ const Sidebar: React.FC<{ appState?: AppState }> = ({appState}) => {
     const actions = appState.prevActionSet.actions
     return (
         <aside style={{display: 'grid', justifyContent: 'center', alignContent: 'center'}}>
-            <div>Latest Actions</div>
-            <ol>
-                {actions.map((val, idx) =>
-                    <li key={idx}>{displayAction(val)}</li>
-                )}
-            </ol>
-            <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
+            <div style={{maxWidth: '280px', width: '280px'}}>
+                <div>Latest Actions</div>
+                <ol>
+                    {actions.map((val, idx) =>
+                        <li key={idx}>{displayAction(val)}</li>
+                    )}
+                </ol>
+                <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
+            </div>
         </aside>
     );
 }
