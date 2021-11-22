@@ -4,7 +4,10 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xyz.nygaard.io.ActiveOrder
+
+fun mergeActions(a: List<Action>, b: List<Action>): List<Action> {
+    return merge(a, b).runnableActions
+}
 
 internal class TaskMasterKtTest {
 
@@ -19,7 +22,7 @@ internal class TaskMasterKtTest {
     fun `clear a + a + empty b`() {
         val a = listOf(clear, addA)
         val b = emptyList<Action>()
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(clear, addA), res)
     }
 
@@ -27,7 +30,7 @@ internal class TaskMasterKtTest {
     fun `clear a + a + b`() {
         val a = listOf(clear, addA)
         val b = listOf(addB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(clear, addA, addB), res)
     }
 
@@ -35,7 +38,7 @@ internal class TaskMasterKtTest {
     fun `clear a + a + clear b + b`() {
         val a = listOf(clear, addA)
         val b = listOf(clear, addB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(clear, addA, addB), res)
     }
 
@@ -43,7 +46,7 @@ internal class TaskMasterKtTest {
     fun `keep a + clear b + b`() {
         val a = listOf(keepA)
         val b = listOf(clear, addB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(clear, keepA, addB), res)
     }
 
@@ -51,7 +54,7 @@ internal class TaskMasterKtTest {
     fun `keep b + clear a + a`() {
         val a = listOf(keepB)
         val b = listOf(clear, addA)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(clear, keepB, addA), res)
     }
 
@@ -59,7 +62,7 @@ internal class TaskMasterKtTest {
     fun `keep a + keep b`() {
         val a = listOf(keepA)
         val b = listOf(keepB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertTrue(res.isEmpty())
     }
 
@@ -67,7 +70,7 @@ internal class TaskMasterKtTest {
     fun `keep a`() {
         val a = listOf(keepA)
         val b = emptyList<Action>()
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertTrue(res.isEmpty())
     }
 
@@ -75,7 +78,7 @@ internal class TaskMasterKtTest {
     fun `keep b`() {
         val a = emptyList<Action>()
         val b = listOf(keepB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertTrue(res.isEmpty())
     }
 
@@ -83,7 +86,7 @@ internal class TaskMasterKtTest {
     fun `keep a + b` (){
         val a = listOf(keepA)
         val b = listOf(addB)
-        val res = merge(a, b)
+        val res = mergeActions(a, b)
         assertEquals(listOf(addB), res)
     }
 

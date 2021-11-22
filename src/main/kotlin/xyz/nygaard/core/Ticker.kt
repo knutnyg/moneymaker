@@ -35,9 +35,9 @@ class Ticker(
                 val askActions = AskMaster(activeOrders, marketTicker).execute()
 
                 val actions = merge(bidActions, askActions)
-                taskMaster.run(actions)
+                taskMaster.run(actions.runnableActions)
 
-                onActions?.accept(actions)
+                onActions?.accept(actions.actionLog)
                 return@coroutineScope
             }
         } catch (exception: IOException) {

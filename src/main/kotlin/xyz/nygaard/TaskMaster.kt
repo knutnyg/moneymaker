@@ -52,14 +52,27 @@ class TaskMaster(
     }
 }
 
-internal fun merge(a: List<Action>, b: List<Action>): List<Action> {
+data class MergedActions(
+    // actionlist to actually run
+    val runnableActions: List<Action>,
+    // actionLog is for the UI to not show a blank list!
+    val actionLog: List<Action>,
+)
+
+internal fun merge(a: List<Action>, b: List<Action>): MergedActions {
     val c = a + b
     val clearAction = c.filterIsInstance<ClearOrders>().firstOrNull()
     val d = c.filter { it !is ClearOrders }
 
     return when (clearAction) {
-        null -> c.filter { it !is KeepAsk && it !is KeepBid }
-        else -> listOf(clearAction) + d
+        null -> MergedActions(
+            runnableActions = c.filter { it !is KeepAsk && it !is KeepBid },
+            actionLog = c,
+        )
+        else -> MergedActions(
+            runnableActions = listOf(clearAction) + d,
+            actionLog = listOf(clearAction) + d,
+        )
     }
 }
 
