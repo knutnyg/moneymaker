@@ -23,6 +23,29 @@ const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
 const H1: React.FC = ({children}) => <h1 style={{paddingTop: '10px'}}>{children}</h1>
 const H2: React.FC = ({children}) => <h2 style={{paddingTop: '10px'}}>{children}</h2>
 
+const PrevActionSet: React.FC<{ appState?: AppState, header?: React.ReactElement }> = ({header, appState}) => {
+    if (!appState) {
+        return null;
+    }
+
+    const actions = appState.prevActionSet.actions
+    return (
+        <Fragment>
+            {
+                header
+                    ? header
+                    : <div>Latest Actions</div>
+            }
+            <ol>
+                {actions.map((val, idx) =>
+                    <li key={idx}>{displayAction(val)}</li>
+                )}
+            </ol>
+            <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
+        </Fragment>
+    );
+}
+
 function AppStateView(props: { state: AppState | undefined }) {
     const state = props.state;
 
@@ -37,7 +60,7 @@ function AppStateView(props: { state: AppState | undefined }) {
         }))
 
     return (
-        <Container>
+        <Box>
             <div>
                 <div>Last updated:</div>
                 <div><RelativeTime ts={state.lastUpdatedAt}/></div>
@@ -77,6 +100,12 @@ function AppStateView(props: { state: AppState | undefined }) {
                     })
                 }
             </div>
+            <Box sx={{
+                display: ['grid', 'grid', 'none'],
+                justifyItems: ['center', 'center', 'unset']
+            }}>
+                <PrevActionSet appState={state} header={<H2>Latest Actions</H2>}/>
+            </Box>
             <H2>Active orders</H2>
             <div>
                 <div
@@ -130,7 +159,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                     )}
                 </div>
             </div>
-        </Container>
+        </Box>
     );
 }
 
@@ -141,27 +170,17 @@ function createWebSocket(path: string): string {
 }
 
 const Sidebar: React.FC<{ appState?: AppState }> = ({appState}) => {
-    if (!appState) {
-        return null
-    }
-    const actions = appState.prevActionSet.actions
     return (
-        <Container sx={{
+        <Box sx={{
             justifyContent: 'center',
             alignContent: 'center',
             maxWidth: ['100%', '280px'],
             width: ['100%', '280px'],
         }}>
             <aside>
-                <div>Latest Actions</div>
-                <ol>
-                    {actions.map((val, idx) =>
-                        <li key={idx}>{displayAction(val)}</li>
-                    )}
-                </ol>
-                <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
+                <PrevActionSet appState={appState}/>
             </aside>
-        </Container>
+        </Box>
     );
 }
 
@@ -204,29 +223,40 @@ const DataSource: React.FC = () => {
     }, [setAppState])
 
     return (
-        <Grid sx={{
-            // display: 'grid',
-            gridTemplateColumns: ['1fr', '1fr', '1fr 280px'],
-            gridTemplateRows: ['none', 'none', 'auto'],
-            gridTemplateAreas: ['"content"', '"content"', '"content sidebar"'],
+        <Box sx={{
+            display: ['flex', 'flex', 'grid'],
+            flexDirection: ['column', 'column', 'unset'],
+            gridTemplateColumns: ['unset', 'unset', '1fr 280px'],
+            gridTemplateRows: ['unset', 'unset', 'auto'],
+            gridTemplateAreas: ['unset', 'unset', '"content sidebar"'],
         }}>
             <Container sx={{
-                display: 'grid',
-                gridArea: ['content'],
-                justifyItems: 'center',
+                gridArea: ['unset', 'unset', 'content'],
             }}>
-                <h1>Moneymaker 🤑</h1>
+                <Container sx={{
+                    display: 'grid',
+                    justifyItems: 'center',
+                }}>
+                    <h1>Moneymaker 🤑</h1>
+                </Container>
+                <Container sx={{gridArea: ['unset', 'unset', 'content']}}>
+                    {error && <span>{error}</span>}
+                </Container>
+                <Container sx={{
+                    gridArea: ['unset', 'unset', 'content'],
+                }}>
+                    <AppStateView state={appState}/>
+                </Container>
             </Container>
-            <Container sx={{gridArea: ['content']}}>
-                {error && <span>{error}</span>}
-            </Container>
-            <Container sx={{gridArea: ['content', 'content', 'sidebar']}}>
+            <Container sx={{
+                gridArea: ['unset', 'unset', 'sidebar'],
+                display: ['none', 'none', 'grid'],
+                justifyItems: ['unset', 'unset', 'center'],
+                alignItems: ['unset', 'unset', 'center'],
+            }}>
                 <Sidebar appState={appState}/>
             </Container>
-            <Container sx={{gridArea: ['content']}}>
-                <AppStateView state={appState}/>
-            </Container>
-        </Grid>
+        </Box>
     );
 }
 
