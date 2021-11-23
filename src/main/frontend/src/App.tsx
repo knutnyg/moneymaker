@@ -1,8 +1,16 @@
 import './App.scss';
-import React, {Fragment, useEffect, useState} from "react";
-import useInterval from "./hooks/useInterval";
-import {AppState, displayAction, parseAppState} from "./api/api";
-import {formatDate, getRelativeTime} from "./util/time";
+import React, {Fragment, useEffect, useState} from 'react';
+import CssBaseline from '@mui/material/CssBaseline';
+import useInterval from './hooks/useInterval';
+import {AppState, displayAction, parseAppState} from './api/api';
+import {formatDate, getRelativeTime} from './util/time';
+import {Box, Container, createTheme, Grid, ThemeProvider} from "@mui/material";
+
+const darkTheme = createTheme({
+    palette: {
+        mode: 'dark',
+    },
+});
 
 const RelativeTime: React.FC<{ ts: Date }> = ({ts}) => {
     const [time, setTime] = useState(new Date())
@@ -29,7 +37,7 @@ function AppStateView(props: { state: AppState | undefined }) {
         }))
 
     return (
-        <div>
+        <Container>
             <div>
                 <div>Last updated:</div>
                 <div><RelativeTime ts={state.lastUpdatedAt}/></div>
@@ -39,21 +47,31 @@ function AppStateView(props: { state: AppState | undefined }) {
                 display: 'grid',
                 gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
             }}>
-                <div style={{fontWeight: 'bold'}}/>
-                <div style={{fontWeight: 'bold'}}>Ask</div>
-                <div style={{fontWeight: 'bold'}}>Bid</div>
-                <div style={{fontWeight: 'bold'}}>Spread</div>
-                <div style={{fontWeight: 'bold'}}>%</div>
+                <Box sx={{
+                    display: 'contents',
+                }}>
+                    <div style={{fontWeight: 'bold'}}/>
+                    <div style={{fontWeight: 'bold'}}>Ask</div>
+                    <div style={{fontWeight: 'bold'}}>Bid</div>
+                    <div style={{fontWeight: 'bold'}}>Spread</div>
+                    <div style={{fontWeight: 'bold'}}>%</div>
+                </Box>
                 {
                     markets.map(m => {
                         const p = m.spread / ((m.ask + m.bid) / 2) * 100
                         return (
                             <Fragment key={m.id}>
-                                <div>{m.id}</div>
-                                <div>{m.ask.toFixed(0)}</div>
-                                <div>{m.bid.toFixed(0)}</div>
-                                <div>{m.spread}</div>
-                                <div>{p.toFixed(2)}%</div>
+                                <Box sx={{
+                                    display: 'contents',
+                                    '&:hover > div': {backgroundColor: '#333'},
+                                    '&:focus > div': {backgroundColor: '#333'},
+                                }}>
+                                    <div>{m.id}</div>
+                                    <div>{m.ask.toFixed(0)}</div>
+                                    <div>{m.bid.toFixed(0)}</div>
+                                    <div>{m.spread}</div>
+                                    <div>{p.toFixed(2)}%</div>
+                                </Box>
                             </Fragment>
                         );
                     })
@@ -64,17 +82,24 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 1fr',
+                        gridTemplateColumns: 'minmax(155px, 2fr) 1fr 1fr 1fr 2fr 1fr',
                     }}
                 >
-                    {state.activeTrades.activeOrders.map(a => <Fragment key={`${a.id}`}>
-                        <div>{formatDate(a.created_at)}</div>
-                        <div>{a.market}</div>
-                        <div>{a.type}</div>
-                        <div>{a.amount}</div>
-                        <div>{a.price.toFixed(2)}</div>
-                        <div>{(a.price * a.amount).toFixed(2)} kr</div>
-                    </Fragment>)}
+                    {state.activeTrades.activeOrders.map(a =>
+                        <Fragment key={`${a.id}`}>
+                            <Box sx={{
+                                display: 'contents',
+                                '&:hover > div': {backgroundColor: '#333'},
+                                '&:focus > div': {backgroundColor: '#333'},
+                            }}>
+                                <Box>{formatDate(a.created_at)}</Box>
+                                <Box sx={{textAlign: 'center'}}>{a.market}</Box>
+                                <Box sx={{textAlign: 'center'}}>{a.type}</Box>
+                                <Box sx={{textAlign: 'right'}}>{a.amount}</Box>
+                                <Box sx={{textAlign: 'right'}}>{a.price.toFixed(2)}</Box>
+                                <Box sx={{textAlign: 'right'}}>{(a.price * a.amount).toFixed(2)} kr</Box>
+                            </Box>
+                        </Fragment>)}
                 </div>
             </div>
             <H2>Trade History</H2>
@@ -82,20 +107,29 @@ function AppStateView(props: { state: AppState | undefined }) {
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 1fr',
+                        gridTemplateColumns: 'minmax(155px, 2fr) 1fr 1fr 1fr 2fr 1fr',
+                        gridRowGap: '2px'
                     }}
                 >
-                    {state.filledOrders.filledOrders.map(a => <Fragment key={`${a.id}`}>
-                        <div>{formatDate(a.created_at)}</div>
-                        <div>{a.market}</div>
-                        <div>{a.type}</div>
-                        <div>{a.amount}</div>
-                        <div>{a.price.toFixed(2)}</div>
-                        <div>{(a.price * a.amount).toFixed(2)} kr</div>
-                    </Fragment>)}
+                    {state.filledOrders.filledOrders.map(a =>
+                        <Fragment key={`${a.id}`}>
+                            <Box sx={{
+                                display: 'contents',
+                                '&:hover > div': {backgroundColor: '#333'},
+                                '&:focus > div': {backgroundColor: '#333'},
+                            }}>
+                                <Box>{formatDate(a.created_at)}</Box>
+                                <Box sx={{textAlign: 'center'}}>{a.market}</Box>
+                                <Box sx={{textAlign: 'center'}}>{a.type}</Box>
+                                <Box sx={{textAlign: 'right'}}>{a.amount}</Box>
+                                <Box sx={{textAlign: 'right'}}>{a.price.toFixed(2)}</Box>
+                                <Box sx={{textAlign: 'right'}}>{(a.price * a.amount).toFixed(2)} kr</Box>
+                            </Box>
+                        </Fragment>
+                    )}
                 </div>
             </div>
-        </div>
+        </Container>
     );
 }
 
@@ -111,8 +145,13 @@ const Sidebar: React.FC<{ appState?: AppState }> = ({appState}) => {
     }
     const actions = appState.prevActionSet.actions
     return (
-        <aside style={{display: 'grid', justifyContent: 'center', alignContent: 'center'}}>
-            <div style={{maxWidth: '280px', width: '280px'}}>
+        <Container sx={{
+            justifyContent: 'center',
+            alignContent: 'center',
+            maxWidth: ['100%', '280px'],
+            width: ['100%', '280px'],
+        }}>
+            <aside>
                 <div>Latest Actions</div>
                 <ol>
                     {actions.map((val, idx) =>
@@ -120,8 +159,8 @@ const Sidebar: React.FC<{ appState?: AppState }> = ({appState}) => {
                     )}
                 </ol>
                 <RelativeTime ts={appState.prevActionSet.lastUpdatedAt}/>
-            </div>
-        </aside>
+            </aside>
+        </Container>
     );
 }
 
@@ -164,27 +203,40 @@ const DataSource: React.FC = () => {
     }, [setAppState])
 
     return (
-        <Fragment>
-            <div className="main">
-                <div className="layout">
-                    <Sidebar appState={appState}/>
-                    <div className="content">
-                        <h1>Moneymaker 🤑</h1>
-                        <div>
-                            {error && <span>{error}</span>}
-                        </div>
-                        <AppStateView state={appState}/>
-                    </div>
-                </div>
-            </div>
-        </Fragment>
+        <Grid sx={{
+            // display: 'grid',
+            gridTemplateColumns: ['1fr', '1fr', '1fr 280px'],
+            gridTemplateRows: ['none', 'none', 'auto'],
+            gridTemplateAreas: ['"content"', '"content"', '"content sidebar"'],
+        }}>
+            <Container sx={{
+                display: 'grid',
+                gridArea: ['content'],
+                justifyItems: 'center',
+            }}>
+                <h1>Moneymaker 🤑</h1>
+            </Container>
+            <Container sx={{gridArea: ['content']}}>
+                {error && <span>{error}</span>}
+            </Container>
+            <Container sx={{gridArea: ['content', 'content', 'sidebar']}}>
+                <Sidebar appState={appState}/>
+            </Container>
+            <Container sx={{gridArea: ['content']}}>
+                <AppStateView state={appState}/>
+            </Container>
+        </Grid>
     );
 }
 
 function App() {
     return (
-        <DataSource>
-        </DataSource>
+        <ThemeProvider theme={darkTheme}>
+            <Fragment>
+                <CssBaseline/>
+                <DataSource/>
+            </Fragment>
+        </ThemeProvider>
     );
 }
 
