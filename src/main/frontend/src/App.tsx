@@ -83,6 +83,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                     style={{
                         display: 'grid',
                         gridTemplateColumns: 'minmax(155px, 2fr) 1fr 1fr 1fr 2fr 1fr',
+                        gridRowGap: '4px',
                     }}
                 >
                     {state.activeTrades.activeOrders.map(a =>
@@ -108,7 +109,7 @@ function AppStateView(props: { state: AppState | undefined }) {
                     style={{
                         display: 'grid',
                         gridTemplateColumns: 'minmax(155px, 2fr) 1fr 1fr 1fr 2fr 1fr',
-                        gridRowGap: '2px'
+                        gridRowGap: '4px',
                     }}
                 >
                     {state.filledOrders.filledOrders.map(a =>
