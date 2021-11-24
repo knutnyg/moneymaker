@@ -1,16 +1,16 @@
-import React, { Fragment } from "react";
-import { AppState, displayAction } from "../api/api";
-import { RelativeTime } from "./RelativeTime";
+import React, { Fragment } from 'react'
+import { AppState, displayAction } from '../api/api'
+import { RelativeTime } from './RelativeTime'
 
 export const PrevActionSet: React.FC<{
-  appState?: AppState;
-  header?: React.ReactElement;
+  appState?: AppState
+  header?: React.ReactElement
 }> = ({ header, appState }) => {
   if (!appState) {
-    return null;
+    return null
   }
 
-  const actions = appState.prevActionSet.actions;
+  const actions = appState.prevActionSet.actions
   return (
     <Fragment>
       {header ? header : <div>Latest Actions</div>}
@@ -21,5 +21,5 @@ export const PrevActionSet: React.FC<{
       </ol>
       <RelativeTime ts={appState.prevActionSet.lastUpdatedAt} />
     </Fragment>
-  );
-};
+  )
+}
