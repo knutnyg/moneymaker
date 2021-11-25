@@ -74,39 +74,40 @@ const DataSource: React.FC = () => {
   }, [setAppState])
 
   return (
-    <Box
+    <Container
       sx={{
         display: ['flex', 'flex', 'grid'],
         flexDirection: ['column', 'column', 'unset'],
         gridTemplateColumns: ['unset', 'unset', '1fr 280px'],
         gridTemplateRows: ['unset', 'unset', 'auto'],
         gridTemplateAreas: ['unset', 'unset', '"content sidebar"'],
+        gridGap: '16px',
       }}
     >
-      <Container
+      <Box
         sx={{
           gridArea: ['unset', 'unset', 'content'],
         }}
       >
-        <Container
+        <Box
           sx={{
             display: 'grid',
             justifyItems: 'center',
           }}
         >
           <h1 className="logo">Moneymaker 🤑</h1>
-        </Container>
-        <Container sx={{ gridArea: ['unset', 'unset', 'content'] }}>
+        </Box>
+        <Box sx={{ gridArea: ['unset', 'unset', 'content'] }}>
           {error && <span>{error}</span>}
-        </Container>
-        <Container
+        </Box>
+        <Box
           sx={{
             gridArea: ['unset', 'unset', 'content'],
           }}
         >
           <AppStateView state={appState} />
-        </Container>
-      </Container>
+        </Box>
+      </Box>
       <Container
         sx={{
           gridArea: ['unset', 'unset', 'sidebar'],
@@ -117,7 +118,7 @@ const DataSource: React.FC = () => {
       >
         <Sidebar appState={appState} />
       </Container>
-    </Box>
+    </Container>
   )
 }
 
