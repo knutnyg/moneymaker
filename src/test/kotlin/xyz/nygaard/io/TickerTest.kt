@@ -15,7 +15,8 @@ internal class TickerTest {
         taskMaster = mockk(),
         onActiveOrders = mockk(),
         onActions = mockk(),
-        onMarket = mockk()
+        onMarket = mockk(),
+        onBalance = mockk(),
     )
 
     @Test
