@@ -1,7 +1,7 @@
 import './App.scss'
 import React, { Fragment, useEffect, useState } from 'react'
 import CssBaseline from '@mui/material/CssBaseline'
-import { AppState, parseAppState } from './api/api'
+import { AppState, Currency, parseAppState } from './api/api'
 import { Box, Container, createTheme, ThemeProvider } from '@mui/material'
 import { PrevActionSet } from './app/PrevActionSet'
 import { AppStateView } from './app/AppStateView'
@@ -19,6 +19,7 @@ function createWebSocket(path: string): string {
 }
 
 const Sidebar: React.FC<{ appState?: AppState }> = ({ appState }) => {
+  const nok = appState?.accountBalance.account.currencies[Currency.NOK]
   return (
     <Box
       sx={{

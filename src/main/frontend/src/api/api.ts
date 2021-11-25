@@ -1,6 +1,10 @@
 export function parseAppState(data: string): AppState {
   const nextState = JSON.parse(data)
   nextState.lastUpdatedAt = new Date(nextState.lastUpdatedAt * 1000)
+  nextState.accountBalance = {
+    ...nextState.accountBalance,
+    lastUpdatedAt: new Date(nextState.accountBalance.lastUpdatedAt * 1000),
+  }
   nextState.activeTrades = {
     ...nextState.activeTrades,
     lastUpdatedAt: new Date(nextState.activeTrades.lastUpdatedAt * 1000),
@@ -111,12 +115,39 @@ export interface MarketState {
   lastUpdatedAt: Date
 }
 
+export interface CurrencyBalance {
+  currency: string
+  balance: number
+  hold: number
+  available: number
+}
+
+export interface AccountState {
+  currencies: Record<Currency, CurrencyBalance>
+}
+
+export interface AccountBalanceState {
+  account: AccountState
+  lastUpdatedAt: Date
+}
+
 export interface AppState {
+  accountBalance: AccountBalanceState
   market: MarketState
   activeTrades: ActiveTrades
   filledOrders: FilledOrdersState
   prevActionSet: ActionsState
   lastUpdatedAt: Date
+}
+
+export enum Currency {
+  ADA = 'ADA',
+  BTC = 'BTC',
+  DAI = 'DAI',
+  ETH = 'ETH',
+  LTC = 'LTC',
+  NOK = 'NOK',
+  XRP = 'XRP',
 }
 
 export enum Markets {

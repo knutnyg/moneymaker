@@ -17,19 +17,23 @@ class Ticker(
     private val onActiveOrders: Consumer<List<ActiveOrder>>?,
     private val onActions: Consumer<List<Action>>?,
     private val onMarket: (mt: MarketTicker) -> Unit,
+    private val onBalance: (a: AccountBalance) -> Unit,
 ) : TimerTask() {
     override fun run() = runBlocking {
         try {
             coroutineScope {
                 val marketTickerCall = async { firiClient.fetchMarketTicker() }
                 val activeOrdersCall = async { firiClient.getActiveOrders() }
+                val balanceCall = async { firiClient.getBalance() }
 
                 val marketTicker = marketTickerCall.await()
                 val activeOrders = activeOrdersCall.await()
+                val balance = balanceCall.await()
 
                 log.info(marketTicker.toString())
                 onActiveOrders?.accept(activeOrders)
                 onMarket(marketTicker)
+                onBalance(balance)
 
                 val bidActions = BidMaster(activeOrders, marketTicker).execute()
                 val askActions = AskMaster(activeOrders, marketTicker).execute()

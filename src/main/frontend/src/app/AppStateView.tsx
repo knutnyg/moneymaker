@@ -5,6 +5,7 @@ import React, { Fragment } from 'react'
 import { PrevActionSet } from './PrevActionSet'
 import { formatDate } from '../util/time'
 import { H2 } from './Base'
+import { BalanceView } from './BalanceView'
 
 export const AppStateView: React.FC<{ state?: AppState }> = ({ state }) => {
   if (!state) {
@@ -23,6 +24,9 @@ export const AppStateView: React.FC<{ state?: AppState }> = ({ state }) => {
         <div>
           <RelativeTime ts={state.lastUpdatedAt} />
         </div>
+      </div>
+      <div>
+        <BalanceView state={state} />
       </div>
       <H2>Market</H2>
       <div
@@ -50,10 +54,10 @@ export const AppStateView: React.FC<{ state?: AppState }> = ({ state }) => {
                 sx={{
                   display: 'contents',
                   '&:hover > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                   '&:focus > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                 }}
               >
@@ -90,10 +94,10 @@ export const AppStateView: React.FC<{ state?: AppState }> = ({ state }) => {
                 sx={{
                   display: 'contents',
                   '&:hover > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                   '&:focus > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                 }}
               >
@@ -125,10 +129,10 @@ export const AppStateView: React.FC<{ state?: AppState }> = ({ state }) => {
                 sx={{
                   display: 'contents',
                   '&:hover > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                   '&:focus > div': {
-                    backgroundColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                 }}
               >

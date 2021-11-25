@@ -36,10 +36,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
-import xyz.nygaard.core.AppState
-import xyz.nygaard.core.MarketState
-import xyz.nygaard.core.ReportTicker
-import xyz.nygaard.core.Ticker
+import xyz.nygaard.core.*
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
 import xyz.nygaard.io.Market
@@ -73,12 +70,16 @@ fun main() {
     )
 
     val active = runBlocking { firiClient.getActiveOrders() }
+    val balance = runBlocking { firiClient.getBalance() }
     val now = Instant.now()
     AppState.update {
         it.copy(
             activeTrades = it.activeTrades.copy(
                 activeOrders = active,
                 lastUpdatedAt = now,
+            ),
+            accountBalance = it.accountBalance.copy(
+                account = balance,
             ),
             lastUpdatedAt = now,
         )
@@ -123,6 +124,15 @@ fun main() {
             AppState.update {
                 it.copy(
                     market = MarketState(mapOf(Market.BTCNOK to mt)),
+                )
+            }
+        },
+        onBalance = { accountBalance ->
+            AppState.update {
+                it.copy(
+                    accountBalance = it.accountBalance.copy(
+                        account = accountBalance,
+                    ),
                 )
             }
         }

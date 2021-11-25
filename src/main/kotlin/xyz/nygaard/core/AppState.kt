@@ -9,6 +9,10 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
+data class AccountBalanceState(
+    val account: AccountBalance,
+    val lastUpdatedAt: Instant = Instant.now(),
+)
 data class ActiveTradesState(
     val activeOrders: List<ActiveOrder>,
     val lastUpdatedAt: Instant = Instant.now(),
@@ -33,6 +37,7 @@ data class AppState(
     val activeTrades: ActiveTradesState,
     val filledOrders: FilledOrdersState,
     val prevActionSet: ActionsState,
+    val accountBalance: AccountBalanceState,
     val lastUpdatedAt: Instant = Instant.now(),
 ) {
     companion object {
@@ -46,8 +51,9 @@ data class AppState(
                     lastUpdatedAt = Instant.now(),
                 ),
                 prevActionSet = ActionsState(listOf()),
-                lastUpdatedAt = Instant.now(),
                 market = MarketState(markets = mapOf()),
+                accountBalance = AccountBalanceState(AccountBalance(mapOf())),
+                lastUpdatedAt = Instant.now(),
             )
         )
 
