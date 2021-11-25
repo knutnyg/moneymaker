@@ -94,7 +94,7 @@ const DataSource: React.FC = () => {
             justifyItems: 'center',
           }}
         >
-          <h1>Moneymaker 🤑</h1>
+          <h1 className="logo">Moneymaker 🤑</h1>
         </Container>
         <Container sx={{ gridArea: ['unset', 'unset', 'content'] }}>
           {error && <span>{error}</span>}
