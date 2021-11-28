@@ -44,7 +44,7 @@ class Ticker(
                 onActions?.accept(actions.actionLog)
                 return@coroutineScope
             }
-        } catch (exception: IOException) {
+        } catch (exception: Throwable) {
             log.error("Failed IO. Skipping this tick")
         }
     }
