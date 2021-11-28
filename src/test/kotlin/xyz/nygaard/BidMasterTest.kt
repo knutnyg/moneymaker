@@ -4,7 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.core.CreateOrderRequest
-import xyz.nygaard.core.strategy.PriceStrategy
+import xyz.nygaard.core.strategy.BalancedStrategy
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
 import java.time.Instant
@@ -20,7 +20,7 @@ internal class BidMasterTest {
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = PriceStrategy().bidPrice(tick),
+            price = BalancedStrategy().bidPrice(tick),
         )
         assertThat(actions).containsExactly(
             AddBid(req = req),

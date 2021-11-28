@@ -7,7 +7,7 @@ import xyz.nygaard.io.MarketTicker
 import kotlin.math.max
 import kotlin.math.min
 
-class PriceStrategy(
+class BalancedStrategy(
     private val minSpread: Double = 0.013,
     private val minAskSpread: Double = 1.0 + minSpread,
     private val minBidSpread: Double = 1.0 - minSpread,
