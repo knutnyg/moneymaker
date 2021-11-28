@@ -1,6 +1,5 @@
 
 val ktorVersion = "1.6.4"
-val logbackVersion = "1.2.7"
 val logstashEncoderVersion = "7.0"
 val kotlinVersion = "1.3.40"
 val junitJupiterVersion = "5.8.1"
@@ -36,7 +35,7 @@ dependencies {
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.0")
 
-    implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("ch.qos.logback:logback-classic:1.3.0-alpha10")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
