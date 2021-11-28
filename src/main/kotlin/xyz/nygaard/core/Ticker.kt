@@ -22,18 +22,27 @@ class Ticker(
     override fun run() = runBlocking {
         try {
             coroutineScope {
-                val marketTickerCall = async { firiClient.fetchMarketTicker() }
-                val activeOrdersCall = async { firiClient.getActiveOrders() }
-                val balanceCall = async { firiClient.getBalance() }
+                val marketTickerCall = async {
+                    val market = firiClient.fetchMarketTicker()
+                    onMarket(market)
+                    market
+                }
+                val activeOrdersCall = async {
+                    val orders = firiClient.getActiveOrders()
+                    onActiveOrders?.accept(orders)
+                    orders
+                }
+                val balanceCall = async {
+                    val balance = firiClient.getBalance()
+                    onBalance(balance)
+                    balance
+                }
 
                 val marketTicker = marketTickerCall.await()
                 val activeOrders = activeOrdersCall.await()
-                val balance = balanceCall.await()
+                //val balance = balanceCall.await()
 
                 log.info(marketTicker.toString())
-                onActiveOrders?.accept(activeOrders)
-                onMarket(marketTicker)
-                onBalance(balance)
 
                 val bidActions = BidMaster(activeOrders, marketTicker).execute()
                 val askActions = AskMaster(activeOrders, marketTicker).execute()
