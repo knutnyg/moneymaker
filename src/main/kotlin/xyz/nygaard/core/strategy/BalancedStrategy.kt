@@ -28,8 +28,8 @@ class BalancedStrategy(
     internal fun maxBid(ask: Double): Double =
         (ask * minBidSpread).round(2)
 
-    fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
-    fun bidPrice(marketTicker: MarketTicker) = min(maxBid(marketTicker.ask), marketTicker.bid)
+    fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask - 1)
+    fun bidPrice(marketTicker: MarketTicker) = min(maxBid(marketTicker.ask), marketTicker.bid + 1)
 
     override fun createAsk(marketTicker: MarketTicker) = CreateOrderRequest(
         type = ActiveOrder.OrderType.ask,

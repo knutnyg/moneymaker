@@ -37,7 +37,7 @@ internal class BidMasterTest {
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = 900.0,
+            price = 901.0,
         )
         assertThat(actions).containsExactly(
             AddBid(req = req),
@@ -70,7 +70,7 @@ internal class BidMasterTest {
         val req = CreateOrderRequest(
             type = ActiveOrder.OrderType.bid,
             amount = 0.0001,
-            price = 90.0,
+            price = 91.0,
         )
 
         assertThat(actions).containsExactly(

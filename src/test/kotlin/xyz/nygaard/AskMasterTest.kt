@@ -37,7 +37,7 @@ internal class AskMasterTest {
         val actions = AskMaster(activeAsks, tick).execute()
         val req = CreateOrderRequest(
             ask,
-            price = 1000.0,
+            price = 999.0,
             amount = 0.0001,
         )
         assertThat(actions).containsExactly(
@@ -69,7 +69,7 @@ internal class AskMasterTest {
         val actions = AskMaster(activeAsks, tick).execute()
         val req = CreateOrderRequest(
             ask,
-            price = 110.0,
+            price = 109.0,
             amount = 0.0001,
         )
         assertThat(actions).containsExactly(
@@ -87,7 +87,7 @@ internal class AskMasterTest {
         val actions = AskMaster(activeAsks, tick).execute()
         val req = CreateOrderRequest(
             ask,
-            price = 520000.0,
+            price = 519999.0,
             amount = 0.0001,
         )
 

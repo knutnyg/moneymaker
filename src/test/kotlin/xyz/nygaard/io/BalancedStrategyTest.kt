@@ -1,8 +1,7 @@
 package xyz.nygaard.io
 
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import xyz.nygaard.core.strategy.BalancedStrategy
@@ -31,7 +30,7 @@ internal class BalancedStrategyTest {
     @Test
     fun `ask price high spread`() {
         val ticker = MarketTicker(100.0, 200.0)
-        assertEquals(200.0, balancedStrategy.askPrice(ticker))
+        assertEquals(199.0, balancedStrategy.askPrice(ticker))
     }
 
     @Test
@@ -43,7 +42,7 @@ internal class BalancedStrategyTest {
     @Test
     fun `bid price high spread`() {
         val ticker = MarketTicker(100.0, 200.0)
-        assertEquals(100.0, balancedStrategy.bidPrice(ticker))
+        assertEquals(101.0, balancedStrategy.bidPrice(ticker))
     }
 
     @Test
@@ -100,7 +99,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `ask just below ticker ask`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.ask, 999.0),
                 MarketTicker(700.0, 1000.0)
@@ -120,7 +119,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `ask far above ticker bid`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.ask, 1100.0),
                 MarketTicker(700.0, 1000.0)
@@ -130,7 +129,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `bid just above ticker bid`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.bid, 701.0),
                 MarketTicker(700.0, 1000.0)
@@ -150,7 +149,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `bid far below ticker bid`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.bid, 600.0),
                 MarketTicker(700.0, 1000.0)
@@ -186,7 +185,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `bid far below low spread`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.bid, 850.0),
                 MarketTicker(990.0, 1000.0)
@@ -206,7 +205,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `bid close to bid high spread over limit`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.bid, 528000.0),
                 MarketTicker(530000.0, 540000.0)
@@ -226,7 +225,7 @@ internal class BalancedStrategyTest {
 
     @Test
     fun `ask close to ask high spread over limit`() {
-        Assertions.assertTrue(
+        assertTrue(
             driftBalancedStrategy.outOfSync(
                 activeOrder(ActiveOrder.OrderType.ask, 542000.0),
                 MarketTicker(530000.0, 540000.0)
