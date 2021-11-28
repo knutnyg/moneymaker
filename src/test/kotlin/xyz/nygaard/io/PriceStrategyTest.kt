@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.core.strategy.PriceStrategy
 import java.time.Instant
 
 internal class PriceStrategyTest {

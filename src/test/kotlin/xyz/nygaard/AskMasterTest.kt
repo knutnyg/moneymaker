@@ -7,7 +7,7 @@ import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
-import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.core.strategy.PriceStrategy
 import java.time.Instant
 
 internal class AskMasterTest {

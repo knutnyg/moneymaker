@@ -1,8 +1,6 @@
 package xyz.nygaard.io
 
 import round
-import xyz.nygaard.core.PriceStrategy
-import xyz.nygaard.io.ActiveOrder.OrderType.ask
 import xyz.nygaard.io.ActiveOrder.OrderType.bid
 import xyz.nygaard.log
 import java.math.BigDecimal
@@ -29,7 +27,7 @@ data class ActiveOrder(
     enum class OrderType { bid, ask }
 
     companion object {
-        fun List<ActiveOrder>.createReport(cutoff:Instant = Instant.now().minusSeconds(2L * DAY)) {
+        fun List<ActiveOrder>.createReport(cutoff: Instant = Instant.now().minusSeconds(2L * DAY)) {
 
             val relevantOrders = this.filter { it.created_at > cutoff }.filter { it.amount == 0.0001 }
             val (bids, asks) = relevantOrders.partition { it.type == bid }
@@ -58,22 +56,13 @@ data class ActiveOrder(
 
 enum class Market { BTCNOK }
 
-data class MarketStrategy (
-    val market: MarketTicker,
-    val priceStrategy: PriceStrategy = PriceStrategy(),
-) {
-    override fun toString(): String {
-        return "MarketStrategy BTCNOK: bid: ${market.bid} NOK, ask: ${market.ask} NOK, spread: ${market.spread} NOK(${market.spreadAsPercentage()}%)"
-    }
-//    internal fun spreadAsPercentage() = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
-}
-
 data class MarketTicker(
     val bid: Double,
     val ask: Double,
     val spread: Double = (ask - bid),
 ) {
-    fun spreadAsPercentage(): BigDecimal = BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
+    fun spreadAsPercentage(): BigDecimal =
+        BigDecimal(spread / ((ask + bid) / 2) * 100).setScale(2, RoundingMode.HALF_UP)
 
     override fun toString(): String {
         return "MarketTick BTCNOK: bid: $bid NOK, ask: $ask NOK, spread: $spread NOK(${spreadAsPercentage()}%)"

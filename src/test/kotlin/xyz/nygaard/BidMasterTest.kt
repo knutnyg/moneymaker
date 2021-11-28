@@ -4,7 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.core.CreateOrderRequest
-import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.core.strategy.PriceStrategy
 import xyz.nygaard.io.Market
 import xyz.nygaard.io.MarketTicker
 import java.time.Instant

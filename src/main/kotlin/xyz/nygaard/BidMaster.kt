@@ -6,7 +6,7 @@ import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType
 import xyz.nygaard.io.MarketTicker
-import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.core.strategy.PriceStrategy
 import xyz.nygaard.core.strategy.Strategy
 import xyz.nygaard.io.responses.Currency
 

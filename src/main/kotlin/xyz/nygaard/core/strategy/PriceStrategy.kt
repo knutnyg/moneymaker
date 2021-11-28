@@ -1,7 +1,7 @@
-package xyz.nygaard.core
+package xyz.nygaard.core.strategy
 
 import round
-import xyz.nygaard.core.strategy.Strategy
+import xyz.nygaard.core.CreateOrderRequest
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.MarketTicker
 import kotlin.math.max
