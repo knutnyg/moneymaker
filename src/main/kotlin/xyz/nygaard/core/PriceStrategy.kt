@@ -1,6 +1,7 @@
 package xyz.nygaard.core
 
 import round
+import xyz.nygaard.core.strategy.Strategy
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.MarketTicker
 import kotlin.math.max
@@ -12,7 +13,7 @@ class PriceStrategy(
     private val minBidSpread: Double = 1.0 - minSpread,
     private val maxBidDrift: Double = 0.999997,
     private val maxAskDrift: Double = 1.000003
-) {
+): Strategy {
 
     init {
         require(minBidSpread <= 1.00) { "require a maximum of 1.00 spread for our bids" }
@@ -30,13 +31,13 @@ class PriceStrategy(
     fun askPrice(marketTicker: MarketTicker) = max(minAsk(marketTicker.bid), marketTicker.ask)
     fun bidPrice(marketTicker: MarketTicker) = min(maxBid(marketTicker.ask), marketTicker.bid)
 
-    fun createAsk(marketTicker: MarketTicker) = CreateOrderRequest(
+    override fun createAsk(marketTicker: MarketTicker) = CreateOrderRequest(
         type = ActiveOrder.OrderType.ask,
         price = askPrice(marketTicker),
         amount = 0.0001,
     )
 
-    fun createBid(marketTicker: MarketTicker) = CreateOrderRequest(
+    override fun createBid(marketTicker: MarketTicker) = CreateOrderRequest(
         type = ActiveOrder.OrderType.bid,
         price = bidPrice(marketTicker),
         amount = 0.0001,
@@ -60,7 +61,7 @@ class PriceStrategy(
         }
     }
 
-    fun allValid(activeOrders: List<ActiveOrder>, marketTicker: MarketTicker): Boolean {
+    override fun allValid(activeOrders: List<ActiveOrder>, marketTicker: MarketTicker): Boolean {
         return activeOrders.all { isValid(it, marketTicker) } && activeOrders.none {
             outOfSync(it, marketTicker)
         }

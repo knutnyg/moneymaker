@@ -7,6 +7,7 @@ import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.ActiveOrder.OrderType
 import xyz.nygaard.io.MarketTicker
 import xyz.nygaard.core.PriceStrategy
+import xyz.nygaard.core.strategy.Strategy
 import xyz.nygaard.io.responses.Currency
 
 class BalanceMaster(
@@ -23,7 +24,7 @@ class BalanceMaster(
 class BidMaster(
     private val activeOrders: List<ActiveOrder>,
     val marketTicker: MarketTicker,
-    private val priceStrategy: PriceStrategy = PriceStrategy(),
+    private val priceStrategy: Strategy = PriceStrategy(),
 ) {
     fun execute(): List<Action> = runBlocking {
         val actions = mutableListOf<Action>()
