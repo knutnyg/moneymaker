@@ -54,7 +54,7 @@ class Ticker(
                 return@coroutineScope
             }
         } catch (exception: Throwable) {
-            log.error("Failed IO. Skipping this tick")
+            log.error("Failed tick: skipping", exception)
         }
     }
 }
