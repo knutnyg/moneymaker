@@ -45,15 +45,13 @@ data class AppState(
 
         private val appState: AtomicReference<AppState> = AtomicReference(
             AppState(
+                market = MarketState(markets = mapOf()),
                 activeTrades = ActiveTradesState(activeOrders = listOf(), lastUpdatedAt = Instant.now()),
                 filledOrders = FilledOrdersState(
                     filledOrders = listOf(),
-                    lastUpdatedAt = Instant.now(),
                 ),
                 prevActionSet = ActionsState(listOf()),
-                market = MarketState(markets = mapOf()),
                 accountBalance = AccountBalanceState(AccountBalance(mapOf())),
-                lastUpdatedAt = Instant.now(),
             )
         )
 
