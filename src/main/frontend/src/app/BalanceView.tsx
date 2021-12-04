@@ -2,6 +2,7 @@ import React from 'react'
 import { AppState, CurrencyBalance } from '../api/api'
 import {
   Box,
+  Hidden,
   Table,
   TableBody,
   TableCell,
@@ -14,7 +15,9 @@ export const CurrencyRow: React.FC<{ c: CurrencyBalance }> = ({ c }) => (
   <TableRow key={c.currency} hover>
     <TableCell>{c.currency}</TableCell>
     <TableCell align={'right'}>{c.balance}</TableCell>
-    <TableCell align={'right'}>{c.available}</TableCell>
+    <Hidden smDown={true}>
+      <TableCell align={'right'}>{c.available}</TableCell>
+    </Hidden>
     <TableCell align={'right'}>{c.hold}</TableCell>
   </TableRow>
 )
@@ -34,7 +37,9 @@ export const BalanceView: React.FC<{ state?: AppState }> = ({ state }) => {
           <TableRow>
             <TableCell>Currency</TableCell>
             <TableCell align={'right'}>Balance</TableCell>
-            <TableCell align={'right'}>Available</TableCell>
+            <Hidden smDown={true}>
+              <TableCell align={'right'}>Available</TableCell>
+            </Hidden>
             <TableCell align={'right'}>Hold</TableCell>
           </TableRow>
         </TableHead>
