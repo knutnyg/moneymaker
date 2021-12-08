@@ -48,7 +48,7 @@ const DataSource: React.FC = () => {
 
     wsSource.onerror = (err) => {
       console.log('onerror', err)
-      const ts = new Date(err.timeStamp)
+      const ts = new Date(err.timeStamp || new Date())
       setError(`error at ${ts.toISOString()}: ${err}`)
     }
     wsSource.onmessage = (evt) => {
