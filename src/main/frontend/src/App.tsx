@@ -48,7 +48,7 @@ const DataSource: React.FC = () => {
 
     wsSource.onerror = (err) => {
       console.log('onerror', err)
-      const ts = new Date(err.timeStamp || new Date())
+      const ts = new Date()
       setError(`error at ${ts.toISOString()}: ${err}`)
     }
     wsSource.onmessage = (evt) => {
@@ -64,7 +64,7 @@ const DataSource: React.FC = () => {
 
     wsSource.onclose = (evt) => {
       console.log('onclose', evt)
-      const ts = new Date(evt.timeStamp)
+      const ts = new Date()
       setError(`connection closed at: ${ts.toISOString()}`)
     }
 
