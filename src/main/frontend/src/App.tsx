@@ -19,7 +19,6 @@ function createWebSocket(path: string): string {
 }
 
 const Sidebar: React.FC<{ appState?: AppState }> = ({ appState }) => {
-  const nok = appState?.accountBalance.account.currencies[Currency.NOK]
   return (
     <Box
       sx={{
