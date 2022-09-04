@@ -8,13 +8,13 @@ import java.math.RoundingMode
 import java.time.Instant
 
 data class OrderResponse(
-    val id: Int
+    val id: Long
 )
 
 const val DAY = 60 * 60 * 24
 
 data class ActiveOrder(
-    val id: Int,
+    val id: Long,
     val market: Market = Market.BTCNOK,
     val type: OrderType,
     val price: Double,
