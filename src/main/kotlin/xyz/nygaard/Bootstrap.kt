@@ -6,22 +6,33 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.jackson.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.features.*
+import io.ktor.client.utils.EmptyContent.headers
+import io.ktor.client.utils.EmptyContent.status
 import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
 import io.ktor.http.content.*
-import io.ktor.jackson.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.serialization.jackson.*
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
+import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.forwardedheaders.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
+import io.ktor.server.websocket.*
+import io.ktor.server.websocket.WebSockets.Plugin
 import io.ktor.util.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +40,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
@@ -153,8 +163,8 @@ fun main() {
 }
 
 private fun setupHttpClient(noLog: Boolean) = HttpClient(CIO) {
-    install(JsonFeature) {
-        serializer = JacksonSerializer() {
+    install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+        jackson {
             disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             registerModule(JavaTimeModule())
         }
@@ -176,14 +186,19 @@ private fun setupHttpClient(noLog: Boolean) = HttpClient(CIO) {
             )
         }
         receivePipeline.intercept(HttpReceivePipeline.After) {
-            val start = context.attributes[startedAtKey]
+            val req = subject.request;
+            val attr = subject.request.attributes;
+
+            val start = attr[startedAtKey]
+
             val elapsedMs = Instant.now().toEpochMilli() - start
             log.info(
                 "Response: <--- [{}] {} {}: {} in {}ms",
-                context.request.headers["X-Request-ID"] ?: "NONE",
-                context.request.method.value,
-                context.request.url,
-                context.response.status.toString(),
+                req.headers["X-Request-ID"] ?: "NONE",
+
+                req.method.value,
+                req.url,
+                subject.status.toString(),
                 elapsedMs,
             )
         }
@@ -244,15 +259,17 @@ internal fun Application.buildApplication(
     firiClient: FiriClient,
     httpClient: HttpClient = HttpClient(CIO),
 ) {
-    installContentNegotiation()
+    val log = log
+
     install(CORS) {
         anyHost()
     }
-    install(XForwardedHeaderSupport)
+    install(XForwardedHeaders)
     install(CallLogging) {
         level = Level.TRACE
     }
-    install(WebSockets)
+    install(io.ktor.server.websocket.WebSockets)
+    installContentNegotiation()
     routing {
         route("/api") {
             registerSelftestApi(httpClient)
@@ -389,7 +406,7 @@ fun Route.registerSelftestApi(httpClient: HttpClient) {
         log.info("looking up markets")
         httpClient.use {
             val res: HttpResponse = it.get("https://api.firi.com/v2/markets")
-            call.respond(res.readText())
+            call.respond(res.bodyAsText())
         }
     }
 }

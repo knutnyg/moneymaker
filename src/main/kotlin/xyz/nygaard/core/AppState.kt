@@ -1,6 +1,6 @@
 package xyz.nygaard.core
 
-import io.ktor.application.*
+import io.ktor.server.application.*
 import xyz.nygaard.Action
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.Market

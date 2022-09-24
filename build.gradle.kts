@@ -1,8 +1,7 @@
 
-val ktorVersion = "1.6.4"
+val ktorVersion = "2.1.1"
 val logstashEncoderVersion = "7.0"
-val kotlinVersion = "1.3.40"
-val junitJupiterVersion = "5.8.1"
+val junitJupiterVersion = "5.9.0"
 
 group = "xyz.nygaard"
 version = "1.0"
@@ -25,23 +24,29 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-server-forwarded-header:$ktorVersion")
+    implementation("io.ktor:ktor-server-websockets:$ktorVersion")
     implementation("io.ktor:ktor-websockets:$ktorVersion")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
-    implementation("io.ktor:ktor-jackson:$ktorVersion")
-    implementation("io.ktor:ktor-auth:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.0")
-
-    implementation("ch.qos.logback:logback-classic:1.3.0-alpha10")
+    implementation("ch.qos.logback:logback-classic:1.4.1")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
-    testImplementation("io.mockk:mockk:1.12.0")
-    testImplementation("org.assertj:assertj-core:3.21.0")
+    testImplementation("io.mockk:mockk:1.12.8")
+    testImplementation("org.assertj:assertj-core:3.23.1")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "junit")
     }
@@ -82,6 +87,6 @@ tasks {
     }
 
     withType<Wrapper> {
-        gradleVersion = "7.2"
+        gradleVersion = "7.5.1"
     }
 }

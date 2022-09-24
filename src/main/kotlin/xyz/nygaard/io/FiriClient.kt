@@ -21,7 +21,7 @@ class FiriClient(
     private val httpclient: HttpClient
 ) {
     suspend fun getBalance(): AccountBalance = try {
-        val currencies: List<CurrencyBalance> = httpclient.signedGet("${baseUrl}/balances").receive()
+        val currencies: List<CurrencyBalance> = httpclient.signedGet("${baseUrl}/balances").body()
         AccountBalance(currencies = currencies.associateBy { Currency.valueOf(it.currency) })
     } catch (e: Exception) {
         log.info("Failed to fetch balance", e)
@@ -30,15 +30,15 @@ class FiriClient(
 
     suspend fun getActiveOrders(): List<ActiveOrder> =
         try {
-            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}").receive()
+            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}").body()
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
             throw IOException("Failed to fetch orders", e)
         }
 
 
-    suspend fun deleteActiveOrders() {
-        val res: HttpResponse = httpclient.signedDelete("${baseUrl}/orders/${Market.BTCNOK}")
+    suspend fun deleteActiveOrders(market: Market = Market.BTCNOK) {
+        val res: HttpResponse = httpclient.signedDelete("${baseUrl}/orders/${market}")
         if (res.status.isSuccess()) {
             log.info("Deleted all open orders")
         } else {
@@ -48,14 +48,14 @@ class FiriClient(
 
     suspend fun getFilledOrders(): List<ActiveOrder> =
         try {
-            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}/history").receive()
+            httpclient.signedGet("${baseUrl}/orders/${Market.BTCNOK}/history").body()
         } catch (e: Exception) {
             log.info("Failed to fetch orders", e)
             throw IOException("Failed to fetch orders", e)
         }
 
     suspend fun fetchMarketTicker(): MarketTicker = try {
-        httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker").receive()
+        httpclient.signedGet("${baseUrl}/markets/${Market.BTCNOK}/ticker").body()
     } catch (e: Exception) {
         log.error("Failed to fetch market", e)
         throw IOException(e)
@@ -64,7 +64,7 @@ class FiriClient(
     suspend fun placeOrder(req: CreateOrderRequest): OrderResponse {
         log.info("${req.market}: placing ${req.type} for ${req.amount} @ ${req.price}")
         return try {
-            httpclient.signedPost("${baseUrl}/orders", req.toRequest()).receive()
+            httpclient.signedPost("${baseUrl}/orders", req.toRequest()).body()
         } catch (e: Exception) {
             log.info("Failed to place order", e)
             throw IOException(e)
@@ -81,7 +81,7 @@ class FiriClient(
     ): HttpResponse =
         signedRequest(HttpMethod.Post, urlString, payload = payload) {
             contentType(contentType)
-            body = payload
+            setBody(payload)
         }
 
     private suspend fun HttpClient.signedDelete(urlString: String) = signedRequest(HttpMethod.Delete, urlString)
