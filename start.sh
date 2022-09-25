@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -ex
+
 git pull
 cd src/main/frontend || exit
 npm run build
