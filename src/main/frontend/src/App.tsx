@@ -12,7 +12,7 @@ const darkTheme = createTheme({
   },
 })
 
-function createWebSocket(path: string): string {
+function createWebSocketUrl(path: string): string {
   const loc = window.location
   const protocolPrefix = loc.protocol === 'https:' ? 'wss:' : 'ws:'
   return protocolPrefix + '//' + loc.host + path
@@ -35,43 +35,110 @@ const Sidebar: React.FC<{ appState?: AppState }> = ({ appState }) => {
   )
 }
 
+type MessageHandler = (ev: MessageEvent) => any
+type ErrorHandler = (ev: Event) => any
+
+class ReconnectingWebSocket {
+  private readonly wsUrl: string
+  private conn?: WebSocket
+  private isClosing = false
+  onmessage: MessageHandler
+  onerror: ErrorHandler
+
+  constructor(
+    wsUrl: string,
+    conn: WebSocket,
+    callbackFn: MessageHandler,
+    onerror: ErrorHandler,
+  ) {
+    this.wsUrl = wsUrl
+    this.conn = conn
+    this.onmessage = callbackFn
+    this.onerror = onerror
+    this.setConn(conn)
+  }
+
+  private onClose(evt: CloseEvent) {
+    console.log('ws: onclose', evt)
+    if (this.isClosing) {
+      console.log('ws: onclose isClosing', evt)
+      return
+    }
+    console.log('ws: onclose attempt reconnect', evt)
+
+    setTimeout(() => {
+      console.log('ws: attempting reconnect')
+      this.setConn(makeWebsocket(this.wsUrl))
+    }, 5000)
+  }
+
+  private setConn(conn?: WebSocket) {
+    this.conn = conn
+    if (this.conn) {
+      this.conn.onmessage = (ev) => this.onmessage(ev)
+      this.conn.onerror = (ev) => this.onerror(ev)
+      this.conn.onclose = (ev) => this.onClose(ev)
+    }
+  }
+
+  close() {
+    this.isClosing = true
+    if (this.conn) {
+      this.conn.close()
+    }
+  }
+}
+
+function makeWebsocket(url: string) {
+  const wsSource = new WebSocket(url)
+  //const wsSource = new WebSocket('ws://localhost:8020/api/app/state/ws');
+  return wsSource
+}
+
+function startWebsocket(
+  url: string,
+  onmessage: MessageHandler,
+  onerror: (ev: Event) => any,
+): ReconnectingWebSocket {
+  const wsSource = makeWebsocket(url)
+  const sock = new ReconnectingWebSocket(url, wsSource, onmessage, onerror)
+  return sock
+}
+
 const DataSource: React.FC = () => {
   const [error, setError] = useState<string | undefined>()
   const [appState, setAppState] = useState<AppState | undefined>()
 
   useEffect(() => {
-    const url = createWebSocket('/api/app/state/ws')
+    const url = createWebSocketUrl('/api/app/state/ws')
     console.log('subscribe to url=' + url)
-    const wsSource = new WebSocket(url)
-    //const wsSource = new WebSocket('ws://localhost:8020/api/app/state/ws');
 
-    wsSource.onerror = (err) => {
-      console.log('onerror', err)
-      const ts = new Date()
-      setError(`error at ${ts.toISOString()}: ${err}`)
-    }
-    wsSource.onmessage = (evt) => {
-      const jsonData = evt.data
-      try {
-        const nextState = parseAppState(jsonData)
-        setAppState(nextState)
-      } catch (err) {
-        console.log('error parsing msg: ', err)
-        console.log('error parsing msg data=', jsonData)
-      }
-    }
-
-    wsSource.onclose = (evt) => {
-      console.log('onclose', evt)
-      const ts = new Date()
-      setError(`connection closed at: ${ts.toISOString()}`)
-    }
+    const wsSource = startWebsocket(
+      url,
+      (evt) => {
+        const jsonData = evt.data
+        try {
+          const nextState = parseAppState(jsonData)
+          setAppState(nextState)
+          // clear any error:
+          setError(undefined)
+        } catch (err) {
+          console.log('ws: error parsing msg: ', err)
+          console.log('ws: error parsing msg data=', jsonData)
+        }
+      },
+      (err) => {
+        console.log('ws: onerror', err)
+        const ts = new Date()
+        setError(`ws: error at ${ts.toISOString()}: ${err}`)
+      },
+    )
 
     return () => {
       console.log('unsubscribe')
       wsSource.close()
     }
-  }, [setAppState])
+  }, [setAppState, setError])
 
   return (
     <Container
