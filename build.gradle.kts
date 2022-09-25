@@ -1,13 +1,14 @@
 
 val ktorVersion = "2.1.1"
-val logstashEncoderVersion = "7.0"
+val logstashEncoderVersion = "7.2"
 val junitJupiterVersion = "5.9.0"
 
 group = "xyz.nygaard"
 version = "1.0"
 
 plugins {
-    kotlin("jvm") version "1.6.0"
+    kotlin("jvm") version "1.7.10"
+    //implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")
 }
 
 buildscript {
