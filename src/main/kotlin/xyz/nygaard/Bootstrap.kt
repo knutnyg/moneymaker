@@ -29,8 +29,11 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -375,7 +378,7 @@ internal fun Application.buildApplication(
                 val initialState = AppState.get()
 
                 send(toJson(initialState))
-                val events = callbackFlow {
+                val events: Flow<AppState> = callbackFlow {
                     trySend(initialState)
                     AppState.listen(call) { state: AppState ->
                         trySend(state)
@@ -385,7 +388,7 @@ internal fun Application.buildApplication(
                         log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
-                }
+                }.buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
                 try {
                     events.collect { next: AppState ->
@@ -417,7 +420,7 @@ internal fun Application.buildApplication(
                         log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
-                }
+                }.buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
                 try {
                     call.response.headers.append(HttpHeaders.CacheControl, "no-cache, no-transform")
