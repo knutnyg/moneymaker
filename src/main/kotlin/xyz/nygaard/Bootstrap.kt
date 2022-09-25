@@ -9,15 +9,10 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.jackson.*
-import io.ktor.client.plugins.websocket.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.client.utils.EmptyContent.headers
-import io.ktor.client.utils.EmptyContent.status
 import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -30,10 +25,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
-import io.ktor.server.websocket.WebSockets.Plugin
-import io.ktor.util.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +38,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.slf4j.event.Level
-import xyz.nygaard.core.*
+import xyz.nygaard.core.AppState
+import xyz.nygaard.core.MarketState
+import xyz.nygaard.core.ReportTicker
+import xyz.nygaard.core.Ticker
 import xyz.nygaard.io.ActiveOrder
 import xyz.nygaard.io.FiriClient
 import xyz.nygaard.io.Market
@@ -70,7 +65,58 @@ fun generateRequestId(): String = UUID.randomUUID().toString()
 @ExperimentalCoroutinesApi
 fun main() {
     val config = setupConfig()
+
     val httpClient = setupHttpClient(config.noLog)
+    httpClient.plugin(HttpSend).intercept { r ->
+        val start = Instant.now().toEpochMilli()
+        val requestId = r.headers.get("X-Request-ID") ?: "NONE"
+
+        if (config.noLog) {
+            return@intercept execute(r)
+        }
+        val url = r.url.buildString()
+        log.info(
+            "---> [{}] {} {}",
+            requestId,
+            r.method.value,
+            url,
+        )
+
+        try {
+            val res = execute(r)
+            val elapsedMs = Instant.now().toEpochMilli() - start
+            if (res.response.status.isSuccess()) {
+                log.info(
+                    "<--- [{}] {} {}: {} in {}ms",
+                    requestId,
+                    r.method.value,
+                    url,
+                    res.response.status.toString(),
+                    elapsedMs,
+                )
+            } else {
+                log.warn(
+                    "<--- [{}] {} {}: {} in {}ms",
+                    requestId,
+                    r.method.value,
+                    url,
+                    res.response.status.toString(),
+                    elapsedMs,
+                )
+            }
+            return@intercept res
+        } catch (e: Exception) {
+            val elapsedMs = Instant.now().toEpochMilli() - start
+            log.error(
+                "<--- [{}] {} {}: FAILED in {}ms",
+                requestId,
+                r.method.value,
+                url,
+                elapsedMs,
+            )
+            throw e
+        }
+    }
     val secretKey = createKey(config.clientSecret)
 
     val firiClient = FiriClient(
@@ -81,17 +127,17 @@ fun main() {
 
     val active = runBlocking { firiClient.getActiveOrders() }
     val balance = runBlocking { firiClient.getBalance() }
-    val now = Instant.now()
+    val startupTime = Instant.now()
     AppState.update {
         it.copy(
             activeTrades = it.activeTrades.copy(
                 activeOrders = active,
-                lastUpdatedAt = now,
+                lastUpdatedAt = startupTime,
             ),
             accountBalance = it.accountBalance.copy(
                 account = balance,
             ),
-            lastUpdatedAt = now,
+            lastUpdatedAt = startupTime,
         )
     }
 
@@ -163,51 +209,74 @@ fun main() {
 }
 
 private fun setupHttpClient(noLog: Boolean) = HttpClient(CIO) {
+    defaultRequest {
+        header("X-Request-ID", getRequestId())
+    }
+    install(Logging) {
+        level = LogLevel.NONE
+    }
     install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
         jackson {
             disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             registerModule(JavaTimeModule())
         }
     }
-    install("RequestLogging") {
-        val startedAtKey = AttributeKey<Long>("started-at")
+}.apply {
+    val loggerm = LoggerFactory.getLogger(HttpClient::class.java)
+    val log = loggerm as ch.qos.logback.classic.Logger
+    val level = if (noLog) {
+        ch.qos.logback.classic.Level.ERROR
+    } else {
+        ch.qos.logback.classic.Level.DEBUG
+    }
+    log.level = level
 
-        if (noLog) {
-            return@install
-        }
-        sendPipeline.intercept(HttpSendPipeline.Monitoring) {
-            val start = Instant.now().toEpochMilli()
-            context.attributes.put(startedAtKey, start)
-            log.info(
-                "Request:  ---> [{}] {} {}",
-                context.headers.get("X-Request-ID") ?: "NONE",
-                context.method.value,
-                Url(context.url),
-            )
-        }
-        receivePipeline.intercept(HttpReceivePipeline.After) {
-            val req = subject.request;
-            val attr = subject.request.attributes;
+    this.plugin(HttpSend).intercept { r ->
+        val start = Instant.now().toEpochMilli()
+        val requestId = r.headers["X-Request-ID"] ?: "NONE"
 
-            val start = attr[startedAtKey]
+        val url = r.url.buildString()
+        log.info(
+            "---> [{}] {} {}",
+            requestId,
+            r.method.value,
+            url,
+        )
 
+        try {
+            val res = execute(r)
             val elapsedMs = Instant.now().toEpochMilli() - start
-            log.info(
-                "Response: <--- [{}] {} {}: {} in {}ms",
-                req.headers["X-Request-ID"] ?: "NONE",
-
-                req.method.value,
-                req.url,
-                subject.status.toString(),
+            if (res.response.status.isSuccess()) {
+                log.info(
+                    "<--- [{}] {} {}: {} in {}ms",
+                    requestId,
+                    r.method.value,
+                    url,
+                    res.response.status.toString(),
+                    elapsedMs,
+                )
+            } else {
+                log.warn(
+                    "<--- [{}] {} {}: {} in {}ms",
+                    requestId,
+                    r.method.value,
+                    url,
+                    res.response.status.toString(),
+                    elapsedMs,
+                )
+            }
+            return@intercept res
+        } catch (e: Exception) {
+            val elapsedMs = Instant.now().toEpochMilli() - start
+            log.error(
+                "<--- [{}] {} {}: FAILED in {}ms",
+                requestId,
+                r.method.value,
+                url,
                 elapsedMs,
             )
+            throw e
         }
-    }
-    //install(Logging) {
-    //    level = LogLevel.INFO
-    //}
-    defaultRequest {
-        header("X-Request-ID", getRequestId())
     }
 }
 
@@ -228,7 +297,8 @@ fun setupConfig(): Config {
         firiBaseUrl = "https://api.firi.com/v2/",
         noLog = true,
         port = props.getOrDefault("MONEYMAKER_PORT", "8020").toString().toInt(),
-        host = props.getOrDefault("MONEYMAKER_HOST", "localhost").toString()
+        // set `host` to 0.0.0.0 to listen on all interfaces:
+        host = props.getOrDefault("MONEYMAKER_HOST", "0.0.0.0").toString()
     )
 
 }
@@ -268,7 +338,7 @@ internal fun Application.buildApplication(
     install(CallLogging) {
         level = Level.TRACE
     }
-    install(io.ktor.server.websocket.WebSockets)
+    install(WebSockets)
     installContentNegotiation()
     routing {
         route("/api") {
@@ -324,6 +394,8 @@ internal fun Application.buildApplication(
                     }
                 } catch (e: ClosedReceiveChannelException) {
                     log.info("onClose ${closeReason.await()}")
+                } catch (e: java.util.concurrent.CancellationException) {
+                    log.info("connection cancelled")
                 } catch (e: Exception) {
                     log.warn("error: ", e)
                 } finally {
