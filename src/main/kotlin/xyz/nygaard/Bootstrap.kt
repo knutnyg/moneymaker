@@ -48,6 +48,7 @@ import xyz.nygaard.io.Market
 import xyz.nygaard.util.createKey
 import java.io.File
 import java.io.FileInputStream
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -338,7 +339,9 @@ internal fun Application.buildApplication(
     install(CallLogging) {
         level = Level.TRACE
     }
-    install(WebSockets)
+    install(WebSockets) {
+        pingPeriodMillis = Duration.ofSeconds(15).toMillis()
+    }
     installContentNegotiation()
     routing {
         route("/api") {
@@ -369,26 +372,26 @@ internal fun Application.buildApplication(
             }
             webSocket("/app/state/ws") {
                 log.info("new ws client")
-                val now = AppState.get()
+                val initialState = AppState.get()
 
-                send(toJson(now))
+                send(toJson(initialState))
                 val events = callbackFlow {
-                    trySend(now)
+                    trySend(initialState)
                     AppState.listen(call) { state: AppState ->
                         trySend(state)
                     }
 
                     awaitClose {
+                        log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
                 }
 
                 try {
-                    events.collect {
-                        val state: AppState = it
+                    events.collect { next: AppState ->
                         withContext(Dispatchers.IO) {
                             log.info("push state for {}", call.request.origin.remoteHost)
-                            val data = toJson(state)
+                            val data = toJson(next)
                             send(data)
                         }
                     }
@@ -398,9 +401,6 @@ internal fun Application.buildApplication(
                     log.info("connection cancelled")
                 } catch (e: Exception) {
                     log.warn("error: ", e)
-                } finally {
-                    log.info("cleanup listener")
-                    AppState.removeListener(call)
                 }
 
             }
@@ -414,6 +414,7 @@ internal fun Application.buildApplication(
                     }
 
                     awaitClose {
+                        log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
                 }
@@ -431,11 +432,12 @@ internal fun Application.buildApplication(
                             }
                         }
                     }
+                } catch (e: ClosedReceiveChannelException) {
+                    log.info("onClose ${e.message}")
+                } catch (e: java.util.concurrent.CancellationException) {
+                    log.info("connection cancelled: ${e.message}")
                 } catch (e: Exception) {
                     log.warn("error: ", e)
-                } finally {
-                    log.info("cleanup listener")
-                    AppState.removeListener(call)
                 }
             }
         }
@@ -464,13 +466,13 @@ fun Route.registerSelftestApi(httpClient: HttpClient) {
         call.respondText("I'm alive! :)")
     }
     get("/health") {
-        val state = AppState.get()
         val listeners = AppState.listenersCount()
+        val state = AppState.get()
 
         call.respond(
             mapOf(
-                "state" to state,
                 "listeners" to listeners,
+                "state" to state,
             )
         )
     }
@@ -504,6 +506,8 @@ data class Config(
     val host: String = "localhost",
 )
 
-fun getEnvOrDefault(name: String, defaultValue: String): String {
-    return System.getenv(name) ?: defaultValue
+fun getEnvOrDefault(name: String, defaultValue: String): String = System.getenv(name) ?: defaultValue
+
+fun getEnvOrFail(envName: String): String = Optional.ofNullable(System.getenv(envName)).orElseThrow {
+    RuntimeException("missing env variable: '$envName'")
 }
