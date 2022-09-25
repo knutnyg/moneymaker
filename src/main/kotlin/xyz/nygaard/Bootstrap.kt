@@ -27,16 +27,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -327,6 +324,7 @@ private fun setupTearDownHook(
     })
 }
 
+@OptIn(FlowPreview::class)
 @ExperimentalCoroutinesApi
 internal fun Application.buildApplication(
     staticResourcesPath: String,
@@ -388,13 +386,18 @@ internal fun Application.buildApplication(
                         log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
-                }.buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+                }
+                    .distinctUntilChanged()
+                    // if we produce states too fast, only keep the newest one
+                    .buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+                    // push state at most every X ms
+                    .sample(500)
 
                 try {
                     events.collect { next: AppState ->
+                        val data = toJson(next)
                         withContext(Dispatchers.IO) {
                             log.info("push state for {}", call.request.origin.remoteHost)
-                            val data = toJson(next)
                             send(data)
                         }
                     }
@@ -420,13 +423,17 @@ internal fun Application.buildApplication(
                         log.info("cleanup listener")
                         AppState.removeListener(call)
                     }
-                }.buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+                }
+                    .distinctUntilChanged()
+                    // if we produce states too fast, only keep the newest one
+                    .buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+                    // push state at most every X ms
+                    .sample(500)
 
                 try {
                     call.response.headers.append(HttpHeaders.CacheControl, "no-cache, no-transform")
                     call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                        events.collect {
-                            val state: AppState = it
+                        events.collect { state ->
                             withContext(Dispatchers.IO) {
                                 log.info("push state for {}", call.request.origin.remoteHost)
                                 val data = toJson(state)
