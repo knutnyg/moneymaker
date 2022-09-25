@@ -54,7 +54,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 val log: Logger = LoggerFactory.getLogger("Moneymaker")
-
+val appLog = log
 private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
 fun <T> toJson(value: T): String = objectMapper.writeValueAsString(value)
@@ -281,7 +281,7 @@ internal fun Application.buildApplication(
     firiClient: FiriClient,
     httpClient: HttpClient = HttpClient(CIO),
 ) {
-    val log = log
+    val log = appLog
 
     install(CORS) {
         anyHost()
