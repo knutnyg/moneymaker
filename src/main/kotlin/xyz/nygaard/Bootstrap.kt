@@ -68,56 +68,6 @@ fun main() {
     val config = setupConfig()
 
     val httpClient = setupHttpClient(config.noLog)
-    httpClient.plugin(HttpSend).intercept { r ->
-        val start = Instant.now().toEpochMilli()
-        val requestId = r.headers.get("X-Request-ID") ?: "NONE"
-
-        if (config.noLog) {
-            return@intercept execute(r)
-        }
-        val url = r.url.buildString()
-        log.info(
-            "---> [{}] {} {}",
-            requestId,
-            r.method.value,
-            url,
-        )
-
-        try {
-            val res = execute(r)
-            val elapsedMs = Instant.now().toEpochMilli() - start
-            if (res.response.status.isSuccess()) {
-                log.info(
-                    "<--- [{}] {} {}: {} in {}ms",
-                    requestId,
-                    r.method.value,
-                    url,
-                    res.response.status.toString(),
-                    elapsedMs,
-                )
-            } else {
-                log.warn(
-                    "<--- [{}] {} {}: {} in {}ms",
-                    requestId,
-                    r.method.value,
-                    url,
-                    res.response.status.toString(),
-                    elapsedMs,
-                )
-            }
-            return@intercept res
-        } catch (e: Exception) {
-            val elapsedMs = Instant.now().toEpochMilli() - start
-            log.error(
-                "<--- [{}] {} {}: FAILED in {}ms",
-                requestId,
-                r.method.value,
-                url,
-                elapsedMs,
-            )
-            throw e
-        }
-    }
     val secretKey = createKey(config.clientSecret)
 
     val firiClient = FiriClient(
@@ -397,7 +347,7 @@ internal fun Application.buildApplication(
                     events.collect { next: AppState ->
                         val data = toJson(next)
                         withContext(Dispatchers.IO) {
-                            log.info("push state for {}", call.request.origin.remoteHost)
+                            log.debug("push state for {}", call.request.origin.remoteHost)
                             send(data)
                         }
                     }
@@ -405,47 +355,6 @@ internal fun Application.buildApplication(
                     log.info("onClose ${closeReason.await()}")
                 } catch (e: java.util.concurrent.CancellationException) {
                     log.info("connection cancelled")
-                } catch (e: Exception) {
-                    log.warn("error: ", e)
-                }
-
-            }
-            get("/app/state/listen") {
-                val now = AppState.get()
-
-                val events = callbackFlow {
-                    trySend(now)
-                    AppState.listen(call) { state: AppState ->
-                        trySend(state)
-                    }
-
-                    awaitClose {
-                        log.info("cleanup listener")
-                        AppState.removeListener(call)
-                    }
-                }
-                    .distinctUntilChanged()
-                    // if we produce states too fast, only keep the newest one
-                    .buffer(1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-                    // push state at most every X ms
-                    .sample(500)
-
-                try {
-                    call.response.headers.append(HttpHeaders.CacheControl, "no-cache, no-transform")
-                    call.respondTextWriter(contentType = ContentType.Text.EventStream) {
-                        events.collect { state ->
-                            withContext(Dispatchers.IO) {
-                                log.info("push state for {}", call.request.origin.remoteHost)
-                                val data = toJson(state)
-                                write("data: ${data}\n\n")
-                                flush()
-                            }
-                        }
-                    }
-                } catch (e: ClosedReceiveChannelException) {
-                    log.info("onClose ${e.message}")
-                } catch (e: java.util.concurrent.CancellationException) {
-                    log.info("connection cancelled: ${e.message}")
                 } catch (e: Exception) {
                     log.warn("error: ", e)
                 }
@@ -518,6 +427,6 @@ data class Config(
 
 fun getEnvOrDefault(name: String, defaultValue: String): String = System.getenv(name) ?: defaultValue
 
-fun getEnvOrFail(envName: String): String = Optional.ofNullable(System.getenv(envName)).orElseThrow {
-    RuntimeException("missing env variable: '$envName'")
-}
+fun getEnvOrFail(envName: String): String = Optional
+    .ofNullable(System.getenv(envName))
+    .orElseThrow { RuntimeException("missing env variable: '$envName'") }

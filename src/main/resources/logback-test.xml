@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="xyz.nygaard" level="DEBUG"/>
+    <logger name="xyz.nygaard" level="INFO"/>
     <logger name="ktor.application" level="TRACE"/>
 
     <root level="INFO">
