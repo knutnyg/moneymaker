@@ -15,7 +15,7 @@ export function parseAppState(data: string): AppState {
         ...o,
         created_at: new Date(o.created_at * 1000),
       }
-    }
+    },
   )
   nextState.filledOrders.filledOrders = nextState.filledOrders.filledOrders.map(
     (o: { created_at: number }) => {
@@ -23,7 +23,7 @@ export function parseAppState(data: string): AppState {
         ...o,
         created_at: new Date(o.created_at * 1000),
       }
-    }
+    },
   )
   nextState.filledOrders = {
     ...nextState.filledOrders,
@@ -142,14 +142,21 @@ export interface AppState {
 
 export enum Currency {
   ADA = 'ADA',
+  AVAX = 'AVAX',
+  BNB = 'BNB',
   BTC = 'BTC',
   DAI = 'DAI',
+  DOT = 'DOT',
   ETH = 'ETH',
   LTC = 'LTC',
   NOK = 'NOK',
+  DKK = 'DKK',
+  SOL = 'SOL',
+  USDC = 'USDC',
   XRP = 'XRP',
 }
 
 export enum Markets {
   BTCNOK = 'BTCNOK',
+  ETHNOK = 'ETHNOK',
 }

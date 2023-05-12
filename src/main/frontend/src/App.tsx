@@ -1,7 +1,7 @@
 import './App.scss'
 import React, { Fragment, useEffect, useState } from 'react'
 import CssBaseline from '@mui/material/CssBaseline'
-import { AppState, Currency, parseAppState } from './api/api'
+import { AppState, parseAppState } from './api/api'
 import { Box, Container, createTheme, ThemeProvider } from '@mui/material'
 import { PrevActionSet } from './app/PrevActionSet'
 import { AppStateView } from './app/AppStateView'
