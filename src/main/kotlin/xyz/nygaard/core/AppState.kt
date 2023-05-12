@@ -54,19 +54,10 @@ data class AppState(
                 accountBalance = AccountBalanceState(AccountBalance(mapOf())),
             )
         )
+        private fun notify(state: AppState) = listeners.forEach { (_, u) -> u(state) }
 
-        private fun notify(state: AppState) {
-            listeners.forEach { (_, u) -> u(state) }
-        }
-
-        fun listen(o: ApplicationCall, l: (AppState) -> Unit) {
-            listeners.putIfAbsent(o, l)
-        }
-
-        fun removeListener(o: ApplicationCall) {
-            listeners.remove(o)
-        }
-
+        fun listen(o: ApplicationCall, l: (AppState) -> Unit) = listeners.putIfAbsent(o, l)
+        fun removeListener(o: ApplicationCall) = listeners.remove(o)
         fun listenersCount() = listeners.size
 
         fun update(f: (AppState) -> AppState): AppState {
@@ -80,8 +71,6 @@ data class AppState(
             return next
         }
 
-        fun get(): AppState {
-            return appState.get().copy()
-        }
+        fun get(): AppState = appState.get().copy()
     }
 }

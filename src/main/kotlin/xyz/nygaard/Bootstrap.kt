@@ -242,14 +242,14 @@ fun setupConfig(): Config {
 
     return Config(
         staticResourcesPath = getEnvOrDefault("STATIC_FOLDER", "src/main/frontend/build"),
-        clientId = props["CLIENT_ID"].toString(),
-        clientSecret = props["CLIENT_SECRET"].toString(),
-        apiKey = props["API_KEY"].toString(),
+        clientId = getEnvOrFail("CLIENT_ID"),
+        clientSecret = getEnvOrFail("CLIENT_SECRET"),
+        apiKey = getEnvOrFail("API_KEY"),
         firiBaseUrl = "https://api.firi.com/v2/",
         noLog = true,
-        port = props.getOrDefault("MONEYMAKER_PORT", "8020").toString().toInt(),
+        port = getEnvOrDefault("MONEYMAKER_PORT", "8020").toInt(),
         // set `host` to 0.0.0.0 to listen on all interfaces:
-        host = props.getOrDefault("MONEYMAKER_HOST", "0.0.0.0").toString()
+        host = getEnvOrDefault("MONEYMAKER_HOST", "0.0.0.0")
     )
 
 }

@@ -54,7 +54,7 @@ data class ActiveOrder(
     }
 }
 
-enum class Market { BTCNOK }
+enum class Market { BTCNOK, ETHNOK }
 
 data class MarketTicker(
     val bid: Double,

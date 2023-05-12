@@ -7,7 +7,7 @@ group = "xyz.nygaard"
 version = "1.0"
 
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.20"
     //implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")
 }
 
@@ -88,6 +88,6 @@ tasks {
     }
 
     withType<Wrapper> {
-        gradleVersion = "7.5.1"
+        gradleVersion = "8.1.1"
     }
 }
